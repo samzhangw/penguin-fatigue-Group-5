@@ -84,8 +84,5 @@ python app.py
 | 33 | 林冠廷 |
 | """ |  |
 
-with open('README.md', 'w', encoding='utf-8') as f:
-f.write(readme_content)
 
-print("File successfully generated.")
 
