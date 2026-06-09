@@ -434,6 +434,6 @@ frame_lock
 
 # 📄 License
 
-MIT License
+NUTC
 
 Copyright © 2026 Group 5
