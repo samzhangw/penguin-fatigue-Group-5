@@ -22,7 +22,7 @@
 ## 🛠️ 技術架構 (Tech Stack)
 
 * **後端:** Python 3, Flask, Flask-SocketIO (WebSocket 即時通訊), Thread Lock 安全機制
-* **前端:** HTML5, Tailwind CSS, JavaScript (膠囊式 UI 設計)
+* **前端:** HTML5, Tailwind CSS, JavaScript 
 * **電腦視覺:** OpenCV, MediaPipe (Face Mesh, Hands, Pose)
 * **雲端:** Supabase, Discord Webhook, NVIDIA NIM API
 
@@ -71,7 +71,6 @@ python app.py
 * **Thread-Safe Architecture:** 導入 `state_lock` 保護系統全域狀態，解決多執行緒衝突問題。
 * **Robust Vision:** 改用 IOD 剛性特徵取代臉部寬高比，大幅提升距離檢測的抗干擾能力。
 * **Strict Calibration:** 於校正階段加入肩膀水平度絕對限制，確保基準值準確。
-* **Capsule UX:** 前端介面採用圓潤膠囊設計，支援置頂懸浮，提供更無感的辦公輔助體驗。
 
 ---
 
