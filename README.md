@@ -436,4 +436,4 @@ frame_lock
 
 MIT License
 
-Copyright © 2026 PulseAI Team
+Copyright © 2026 Group 5
