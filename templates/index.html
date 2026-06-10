@@ -870,6 +870,93 @@
 			</div>
 		</div>
 
+		<div
+			id="settlement-result-modal"
+			class="fixed inset-0 bg-slate-900/35 backdrop-blur-lg z-[70] hidden items-center justify-center opacity-0 p-4"
+		>
+			<div id="settlement-confetti" class="settlement-confetti" aria-hidden="true"></div>
+			<div
+				id="settlement-result-card"
+				class="settlement-result-card w-full max-w-4xl max-h-[94vh] overflow-y-auto"
+			>
+				<button
+					onclick="closeSettlementResult()"
+					class="absolute top-5 right-5 w-10 h-10 bg-white/80 text-slate-500 rounded-full hover:bg-white flex items-center justify-center z-20 transition-colors shadow-sm"
+					aria-label="關閉今日結算"
+				>
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+
+				<div class="grid md:grid-cols-[280px_1fr] gap-7 items-center">
+					<div class="settlement-image-wrap">
+						<div class="settlement-halo"></div>
+						<img
+							id="settlement-image"
+							src=""
+							alt="今日工作稱號"
+							onerror="this.onerror=null; this.src='/static/img/my_logo.png';"
+						/>
+						<div class="settlement-finish-badge">
+							<i class="fa-solid fa-flag-checkered"></i>
+							今日收工
+						</div>
+					</div>
+
+					<div>
+						<p class="text-xs font-black tracking-[0.3em] text-purple-400 mb-2">
+							DAILY WORK SETTLEMENT
+						</p>
+						<h2 id="settlement-title" class="text-3xl md:text-4xl font-black text-slate-800 leading-tight mb-3">
+							今日工作結算
+						</h2>
+						<p id="settlement-comment" class="text-slate-500 font-bold leading-relaxed mb-3"></p>
+						<p id="settlement-advice" class="text-sm text-indigo-600 font-black bg-indigo-50 rounded-2xl px-4 py-3"></p>
+					</div>
+				</div>
+
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-7">
+					<div class="settlement-stat">
+						<i class="fa-solid fa-clock text-purple-400"></i>
+						<span>今日專注</span>
+						<strong id="settlement-work-time">0 分鐘</strong>
+					</div>
+					<div class="settlement-stat">
+						<i class="fa-solid fa-bullseye text-emerald-400"></i>
+						<span>完成番茄鐘</span>
+						<strong><b id="settlement-pomodoros">0</b> 顆</strong>
+					</div>
+					<div class="settlement-stat">
+						<i class="fa-solid fa-fish text-sky-400"></i>
+						<span>摸魚時間</span>
+						<strong><b id="settlement-cyber-time">0</b> 分鐘</strong>
+					</div>
+					<div class="settlement-stat">
+						<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+						<span>健康警報</span>
+						<strong><b id="settlement-alerts">0</b> 次</strong>
+					</div>
+				</div>
+
+				<div class="starbucks-result mt-5">
+					<div class="starbucks-cup"><i class="fa-solid fa-mug-hot"></i></div>
+					<div class="min-w-0">
+						<p class="text-xs font-black tracking-widest text-emerald-700/70">今日工作產值換算</p>
+						<p class="text-lg md:text-2xl font-black text-emerald-900">
+							可以購買 <span id="settlement-starbucks-cups" class="text-4xl">0</span> 杯星巴克
+						</p>
+						<p id="settlement-starbucks-detail" class="text-xs font-bold text-emerald-700/70 mt-1"></p>
+					</div>
+				</div>
+
+				<button
+					onclick="closeSettlementResult()"
+					class="mt-6 w-full py-3.5 rounded-2xl font-black text-white bg-gradient-to-r from-purple-400 to-indigo-400 hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg bubble-hover"
+				>
+					辛苦了，完美收工
+				</button>
+			</div>
+		</div>
+
 		<audio
 			id="alert-sound"
 			src="{{ url_for('static', filename='audio/ringball.mp3') }}"

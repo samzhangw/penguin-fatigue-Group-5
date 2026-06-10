@@ -35,6 +35,7 @@ NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 DAILY_REPORT_TIME = "18:00"  
+STARBUCKS_SECONDS_PER_CUP = 3600
 
 # 🚀 初始化 NVIDIA API Client
 if NVIDIA_API_KEY:
@@ -69,6 +70,52 @@ system_state = {
 force_recalibrate = False
 has_sent_report_today = False 
 weekly_history = [] 
+
+
+def get_daily_evaluation(state):
+    work_time_hrs = state["daily_total_time"] / 3600.0
+    expected_time = state["daily_total_time"] + state["total_cyberloafing_time"]
+    cyber_ratio = state["total_cyberloafing_time"] / expected_time if expected_time > 0 else 0
+    alerts = state["alert_counts"]
+
+    if cyber_ratio > 0.4:
+        return {"title": "🥷 薪水小偷 / 摸魚大師", "comment": "「你的椅子上是長釘子了嗎？攝影機表示它很想念你。」", "advice": "對策：請嘗試縮短休息週期。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513214183666094120/touchfish.png"}
+    elif state["daily_total_time"] > 7200 and (alerts["eyes"] + alerts["mouth"]) > 5:
+        return {"title": "🧟 過勞社畜 / 燃燒生命的肝鐵人", "comment": "「靈魂已經登出，只剩肉體還在敲鍵盤。請立刻去睡覺。」", "advice": "對策：建議開啟強制鎖定螢幕休息機制。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513214765269520535/image.png"}
+    elif work_time_hrs > 0 and (alerts["shoulders"] + alerts["dist"]) > (15 * work_time_hrs):
+        return {"title": "🦍 進化失敗的猿人 / 脊椎終結者", "comment": "「你整個人快要鑽進螢幕裡了，再不坐正，明天就準備去復健科報到。」", "advice": "對策：請執行系統引導的肩頸伸展動作。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513214908919976028/image.png"}
+    elif state["max_dark_time"] > 60:
+        return {"title": "🦇 夜行性穴居生物", "comment": "「不開燈工作是為了省電還是為了氣氛？你的散光度數準備增加了。」", "advice": "對策：請立即開啟室內光源以保護視力。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513215045683908799/image.png"}
+    elif state["pomodoro_count"] > 0 and all(v < 3 for v in alerts.values()):
+        return {"title": "🧘 入定高僧 / 模範生企鵝", "comment": "「完美的人體工學模範生，請收下我的膝蓋！」", "advice": "對策：已解鎖企鵝最終進化形態！", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513215225523081406/image.png"}
+    else:
+        return {"title": "🧑‍💻 我們還不夠熟，所以還在觀察模式", "comment": "「保持良好的工作節奏，繼續加油！」", "advice": "對策：繼續維持當前的專注循環。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513215835332808875/content.png"}
+
+
+def build_daily_settlement(state):
+    total_seconds = int(state["daily_total_time"])
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    starbucks_exact = total_seconds / STARBUCKS_SECONDS_PER_CUP
+
+    return {
+        "evaluation": get_daily_evaluation(state),
+        "work_time": {
+            "seconds": total_seconds,
+            "formatted": f"{hours} 小時 {minutes} 分鐘 {seconds} 秒",
+        },
+        "pomodoro_count": state["pomodoro_count"],
+        "failed_pomodoros": state["failed_pomodoros"],
+        "cyberloafing_minutes": int(state["total_cyberloafing_time"] // 60),
+        "alerts": state["alert_counts"].copy(),
+        "starbucks": {
+            "cups": int(starbucks_exact),
+            "exact": round(starbucks_exact, 1),
+            "remaining_minutes": max(0, math.ceil(
+                (STARBUCKS_SECONDS_PER_CUP - (total_seconds % STARBUCKS_SECONDS_PER_CUP)) / 60
+            )) if total_seconds % STARBUCKS_SECONDS_PER_CUP else 0,
+        },
+    }
 
 # ==========================================
 # 幾何計算輔助函數
@@ -185,25 +232,6 @@ def _discord_task(report_type, is_manual):
         state_snap = copy.deepcopy(system_state)
         hist_snap = copy.deepcopy(weekly_history)
 
-    def get_evaluation(state):
-        work_time_hrs = state["daily_total_time"] / 3600.0 if state["daily_total_time"] > 0 else 1.0
-        expected_time = state["daily_total_time"] + state["total_cyberloafing_time"]
-        cyber_ratio = state["total_cyberloafing_time"] / expected_time if expected_time > 0 else 0
-        alerts = state["alert_counts"]
-
-        if cyber_ratio > 0.4:
-            return {"title": "🥷 薪水小偷 / 摸魚大師", "comment": "「你的椅子上是長釘子了嗎？攝影機表示它很想念你。」", "advice": "對策：請嘗試縮短休息週期。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513214183666094120/touchfish.png"}
-        elif state["daily_total_time"] > 7200 and (alerts["eyes"] + alerts["mouth"]) > 5:
-            return {"title": "🧟 過勞社畜 / 燃燒生命的肝鐵人", "comment": "「靈魂已經登出，只剩肉體還在敲鍵盤。請立刻去睡載。」", "advice": "對策：建議開啟強制鎖定螢幕休息機制。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513214765269520535/image.png"}
-        elif (alerts["shoulders"] + alerts["dist"]) > (15 * work_time_hrs) and work_time_hrs > 0:
-            return {"title": "🦍 進化失敗的猿人 / 脊椎終結者", "comment": "「你整個人快要鑽進螢幕裡了，再不坐正，明天就準備去復健科報到。」", "advice": "對策：請執行系統引導的肩頸伸展動作。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513214908919976028/image.png"}
-        elif state["max_dark_time"] > 60:
-            return {"title": "🦇 夜行性穴居生物", "comment": "「不開燈工作是為了省電還是為了氣氛？你的散光度數準備增加了。」", "advice": "對策：請立即開啟室內光源以保護視力。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513215045683908799/image.png"}
-        elif state["pomodoro_count"] > 0 and all(v < 3 for v in alerts.values()):
-            return {"title": "🧘 入定高僧 / 模範生企鵝", "comment": "「完美的人體工學模範生，請收下我的膝蓋！」", "advice": "對策：已解鎖企鵝最終進化形態！", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513215225523081406/image.png"}
-        else:
-            return {"title": "🧑‍💻我們還不夠熟，所以還在觀察模式 ", "comment": "「保持良好的工作節奏，繼續加油！」", "advice": "對策：繼續維持當前的專注循環。", "image_url": "https://media.discordapp.net/attachments/1501988640878759957/1513215835332808875/content.png"}
-
     try:
         if report_type == "daily":
             # 💡 日報保持簡潔，且不呼叫 NVIDIA API
@@ -212,7 +240,7 @@ def _discord_task(report_type, is_manual):
             time_str = f"{hours} 小時 {minutes} 分鐘 {seconds} 秒"
             alerts = state_snap["alert_counts"]
             
-            eval_data = get_evaluation(state_snap)
+            eval_data = get_daily_evaluation(state_snap)
             
             title = "📊 PulseAI 今日健康與專注報告" if not is_manual else "🧪 PulseAI 系統測試 (日報)"
             desc = (f"### 🏆 今日結算稱號：【 {eval_data['title']} 】\n"
@@ -721,6 +749,13 @@ def handle_set_time(data):
 def handle_pause(data): 
     with state_lock: 
         system_state["is_paused"] = data.get("paused", False)
+
+@socketio.on('request_daily_settlement')
+def handle_daily_settlement():
+    with state_lock:
+        system_state["is_paused"] = True
+        settlement = build_daily_settlement(copy.deepcopy(system_state))
+    socketio.emit('daily_settlement_response', settlement)
 
 @socketio.on('request_discord_report')
 def handle_manual_report(data):

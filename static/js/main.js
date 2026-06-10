@@ -1054,15 +1054,99 @@ function executeSettle(syncDiscord) {
 		sendReport("daily");
 	}
 
-	isSettled = true; // 🌟 標記為已結算狀態
+	isSettled = true;
 
-	// 🌟 結算後強制「暫停」系統，不再繼續倒數
 	if (!isPaused) {
 		togglePause();
 	}
 
-	socket.emit("set_pomodoro_time", { seconds: currentTargetTime });
 	closeSettleModal();
+	socket.emit("request_daily_settlement");
+}
+
+socket.on("daily_settlement_response", function (summary) {
+	const evaluation = summary.evaluation;
+	const alertTotal = Object.values(summary.alerts).reduce(
+		(total, count) => total + count,
+		0,
+	);
+
+	loadSettlementImage(evaluation.image_url);
+	document.getElementById("settlement-title").innerText = evaluation.title;
+	document.getElementById("settlement-comment").innerText = evaluation.comment;
+	document.getElementById("settlement-advice").innerText = evaluation.advice;
+	document.getElementById("settlement-work-time").innerText =
+		summary.work_time.formatted;
+	document.getElementById("settlement-pomodoros").innerText =
+		summary.pomodoro_count;
+	document.getElementById("settlement-cyber-time").innerText =
+		summary.cyberloafing_minutes;
+	document.getElementById("settlement-alerts").innerText = alertTotal;
+	document.getElementById("settlement-starbucks-cups").innerText =
+		summary.starbucks.cups;
+
+	const detail = document.getElementById("settlement-starbucks-detail");
+	if (summary.starbucks.cups > 0) {
+		detail.innerText = `累積產值約 ${summary.starbucks.exact} 杯，每專注 60 分鐘換算 1 杯。`;
+	} else if (summary.starbucks.remaining_minutes > 0) {
+		detail.innerText = `再專注 ${summary.starbucks.remaining_minutes} 分鐘，就能解鎖第 1 杯。`;
+	} else {
+		detail.innerText = "每專注 60 分鐘換算 1 杯。";
+	}
+
+	openSettlementResult();
+});
+
+function loadSettlementImage(imageUrl) {
+	const image = document.getElementById("settlement-image");
+	const fallbackUrl = "/static/img/my_logo.png";
+	image.src = imageUrl;
+
+	setTimeout(() => {
+		if (image.src === imageUrl && (!image.complete || image.naturalWidth === 0)) {
+			image.src = fallbackUrl;
+		}
+	}, 1500);
+}
+
+function openSettlementResult() {
+	const modal = document.getElementById("settlement-result-modal");
+	const card = document.getElementById("settlement-result-card");
+	createSettlementConfetti();
+	modal.classList.remove("hidden");
+	modal.classList.add("flex");
+	requestAnimationFrame(() => {
+		modal.classList.remove("opacity-0");
+		card.classList.add("is-visible");
+	});
+}
+
+function closeSettlementResult() {
+	const modal = document.getElementById("settlement-result-modal");
+	const card = document.getElementById("settlement-result-card");
+	modal.classList.add("opacity-0");
+	card.classList.remove("is-visible");
+	setTimeout(() => {
+		modal.classList.add("hidden");
+		modal.classList.remove("flex");
+		document.getElementById("settlement-confetti").innerHTML = "";
+	}, 350);
+}
+
+function createSettlementConfetti() {
+	const container = document.getElementById("settlement-confetti");
+	const colors = ["#c084fc", "#818cf8", "#34d399", "#fbbf24", "#fb7185"];
+	container.innerHTML = "";
+
+	for (let i = 0; i < 36; i++) {
+		const piece = document.createElement("span");
+		piece.style.left = `${Math.random() * 100}%`;
+		piece.style.backgroundColor = colors[i % colors.length];
+		piece.style.animationDelay = `${Math.random() * 0.8}s`;
+		piece.style.animationDuration = `${2.4 + Math.random() * 1.8}s`;
+		piece.style.transform = `rotate(${Math.random() * 180}deg)`;
+		container.appendChild(piece);
+	}
 }
 
 // ==========================================
