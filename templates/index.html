@@ -191,20 +191,43 @@
 							主人去哪了？
 						</h2>
 					</div>
-					<div
-						id="overlay-calib"
-						class="overlay-layer bg-purple-50/95 hidden"
-					>
-						<div class="relative flex flex-col items-center">
-							<i
-								class="fa-solid fa-crosshairs text-6xl text-purple-400 mb-8 animate-spin"
-								style="animation-duration: 4s"
-							></i>
-							<h2 class="text-3xl font-black text-slate-800 mb-3">
-								特徵校正中
-							</h2>
+						<div
+							id="overlay-calib"
+							class="overlay-layer bg-purple-50/95 hidden"
+						>
+							<div
+								class="relative flex flex-col items-center w-full max-w-md px-8 text-center"
+							>
+								<i
+									id="calib-icon"
+									class="fa-solid fa-crosshairs text-6xl text-purple-400 mb-8 animate-spin"
+									style="animation-duration: 4s"
+								></i>
+								<h2
+									id="calib-title"
+									class="text-3xl font-black text-slate-800 mb-3"
+								>
+									特徵校正中
+								</h2>
+								<p
+									id="calib-desc"
+									class="text-base font-bold text-slate-500 mb-5"
+								>
+									請正對鏡頭，保持雙肩水平並坐正
+								</p>
+								<div
+									class="w-full h-3 overflow-hidden rounded-full bg-white shadow-inner"
+									role="progressbar"
+									aria-label="特徵校正進度"
+								>
+									<div
+										id="calib-progress-bar"
+										class="h-full rounded-full bg-purple-400 transition-all duration-300"
+										style="width: 0%"
+									></div>
+								</div>
+							</div>
 						</div>
-					</div>
 
 					<div
 						id="overlay-exercise"

@@ -474,6 +474,7 @@ def ai_worker():
                             calib_data = {"ear": [], "mar": [], "dist": [], "shoulder": [], "mouth_w": []}
                             ema_values = {"ear": None, "mar": None, "dist": None, "shoulder": None, "mouth_w": None}
                             system_state["calibration_status"] = "COLLECTING"
+                            system_state["calibration_progress"] = 0
                         current_mode = system_state["mode"]
 
                     success, image = cap.read()
