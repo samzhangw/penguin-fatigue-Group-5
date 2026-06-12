@@ -207,7 +207,7 @@ def get_ai_advice(time_str, alerts, pomo_done=0, pomo_fail=0, cyber_time=0, hist
         """
         
         completion = nvidia_client.chat.completions.create(
-            model="meta/llama-3.1-70b-instruct", 
+            model="meta/llama-3.1-8b-instruct", 
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6, 
             max_tokens=256,
