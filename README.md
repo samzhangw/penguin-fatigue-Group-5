@@ -96,7 +96,6 @@
 
 * NVIDIA NIM
 * Llama 3.1 8B
-* Llama 3.1 70B
 
 根據：
 
