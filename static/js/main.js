@@ -28,9 +28,15 @@ let currentWarningMsg = "";
 // ⏸️ 暫停偵測與結算狀態控制
 // ==========================================
 let isPaused = false;
-let isSettled = false; // 🌟 結算狀態標記
+let isSettled = false;
 
 function togglePause() {
+	// 🌟 新增：如果當前是休息模式，點擊按鈕直接觸發跳過，不執行暫停計時
+	if (prevStates.mode === "REST") {
+		socket.emit("request_skip_rest");
+		return;
+	}
+
 	isPaused = !isPaused;
 
 	// 🌟 當使用者點擊「繼續偵測」時，解除結算狀態
@@ -43,20 +49,22 @@ function togglePause() {
 	const text = document.getElementById("text-pause");
 
 	if (isPaused) {
-		// 切換為暫停狀態 (黃色)
-		btn.classList.remove("btn-glass");
-		btn.classList.add("btn-glass-warning");
-
-		icon.className = "fa-solid fa-play pl-1 text-lg";
+		// 切換為黃色/警告色的液態玻璃
+		btn.className =
+			"w-full py-2.5 mb-4 flex justify-center items-center gap-2 group transition-all duration-300 bubble-hover cursor-pointer rounded-2xl bg-gradient-to-tr from-white/90 to-amber-50/90 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_4px_12px_rgba(245,158,11,0.15)] hover:from-white hover:to-amber-100";
+		icon.className =
+			"fa-solid fa-play pl-1 text-lg text-amber-500 group-hover:scale-110 transition-transform";
 		text.innerText = "繼續偵測與計時";
+		text.className = "font-bold text-amber-600";
 		socket.emit("request_pause", { paused: true });
 	} else {
-		// 恢復正常狀態 (紫色)
-		btn.classList.remove("btn-glass-warning");
-		btn.classList.add("btn-glass");
-
-		icon.className = "fa-solid fa-pause text-lg";
+		// 恢復紫色的液態玻璃
+		btn.className =
+			"w-full py-2.5 mb-4 flex justify-center items-center gap-2 group transition-all duration-300 bubble-hover cursor-pointer rounded-2xl bg-gradient-to-tr from-white/90 to-purple-50/90 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_4px_12px_rgba(168,85,247,0.15)] hover:from-white hover:to-purple-100";
+		icon.className =
+			"fa-solid fa-pause text-lg text-purple-500 group-hover:scale-110 transition-transform";
 		text.innerText = "暫停偵測與計時";
+		text.className = "font-bold text-purple-600";
 		socket.emit("request_pause", { paused: false });
 	}
 }
@@ -108,7 +116,6 @@ function setSystemStatus(level, msg = "") {
 			warningSound.currentTime = 0;
 		}
 	} else {
-		// NORMAL
 		if (errorMsgEl) errorMsgEl.className = "hidden";
 		if (dot)
 			dot.className =
@@ -297,7 +304,7 @@ function updateCameraUI() {
 				videoStream.getAttribute("data-src") || "/video_feed";
 		}
 
-		lastDataTime = Date.now(); // 重置看門狗
+		lastDataTime = Date.now();
 	}
 
 	const ghostOverlay = document.getElementById("overlay-absent");
@@ -477,46 +484,99 @@ socket.on("state_update", function (state) {
 			const exNotification = new Notification("小企鵝 休息時間 ☕", {
 				body: "專注時間結束，請起立活動一下身體吧！",
 				requireInteraction: true,
+				tag: "rest-alert", // 🌟 新增這一行：加上唯一標籤，防止通知重複堆疊
 			});
 			exNotification.onclick = function () {
 				window.focus();
 				this.close();
 			};
 		}
-		if (!isMuted && alertSound && !isCameraError) {
-			alertSound.play().catch((e) => console.log("音效被阻擋", e));
-			setTimeout(() => {
-				alertSound.pause();
-				alertSound.currentTime = 0;
-			}, 1500);
+		// 🌟 已經移除此處的 alertSound 播放邏輯，確保音效只有在姿勢不良時才會響起
+	}
+
+	// ========================================================
+	// ⏱️ 計時器渲染、動態按鈕切換與液態玻璃特效控制
+	// ========================================================
+	const isRestMode = state.mode === "REST";
+
+	const timerEl = document.getElementById("timer");
+	const btnPause = document.getElementById("btn-pause");
+	const iconPause = document.getElementById("icon-pause");
+	const textPause = document.getElementById("text-pause");
+
+	if (isRestMode) {
+		const rt = Math.max(0, state.target_rest_time - state.rest_time);
+		if (timerEl) {
+			timerEl.innerText = `${Math.floor(rt / 60)
+				.toString()
+				.padStart(2, "0")}:${Math.floor(rt % 60)
+				.toString()
+				.padStart(2, "0")}`;
+			// 刪除 font-mono，並設為 font-black
+			timerEl.className =
+				"text-6xl font-black text-blue-500 tracking-tighter mb-2 animate-pulse";
+		}
+
+		if (btnPause) {
+			btnPause.className =
+				"w-full py-2.5 mb-4 flex justify-center items-center gap-2 group transition-all duration-300 bubble-hover cursor-pointer rounded-[999px] bg-gradient-to-tr from-blue-400/95 to-blue-300/95 text-white border-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_4px_12px_rgba(59,130,246,0.55)] hover:from-blue-500 hover:to-blue-400";
+		}
+		if (iconPause)
+			iconPause.className = "fa-solid fa-forward-step text-lg text-white";
+		if (textPause) {
+			textPause.innerText = "跳過休息階段";
+			textPause.className = "font-bold text-white tracking-wide";
+		}
+	} else {
+		if (timerEl) {
+			if (isSettled) {
+				// 刪除 font-mono，並設為 font-black
+				timerEl.innerText = "今日圓滿 ☕";
+				timerEl.className =
+					"text-5xl font-black text-emerald-500 mb-2 tracking-tighter";
+			} else {
+				// 刪除 font-mono，並設為 font-black
+				const tr = Math.max(
+					0,
+					state.target_work_time - state.work_time,
+				);
+				timerEl.innerText = `${Math.floor(tr / 60)
+					.toString()
+					.padStart(2, "0")}:${Math.floor(tr % 60)
+					.toString()
+					.padStart(2, "0")}`;
+				timerEl.className =
+					"text-6xl font-black text-slate-700 tracking-tighter mb-2";
+			}
+		}
+
+		// 恢復原本的暫停 / 繼續計時按鈕外觀邏輯
+		if (btnPause) {
+			if (isPaused) {
+				btnPause.className =
+					"w-full py-2.5 mb-4 flex justify-center items-center gap-2 group transition-all duration-300 bubble-hover cursor-pointer rounded-2xl bg-gradient-to-tr from-white/90 to-amber-50/90 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_4px_12px_rgba(245,158,11,0.15)] hover:from-white hover:to-amber-100";
+				if (iconPause)
+					iconPause.className =
+						"fa-solid fa-play pl-1 text-lg text-amber-500 group-hover:scale-110 transition-transform";
+				if (textPause) {
+					textPause.innerText = "繼續偵測與計時";
+					textPause.className = "font-bold text-amber-600";
+				}
+			} else {
+				btnPause.className =
+					"w-full py-2.5 mb-4 flex justify-center items-center gap-2 group transition-all duration-300 bubble-hover cursor-pointer rounded-2xl bg-gradient-to-tr from-white/90 to-purple-50/90 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_4px_12px_rgba(168,85,247,0.15)] hover:from-white hover:to-purple-100";
+				if (iconPause)
+					iconPause.className =
+						"fa-solid fa-pause text-lg text-purple-500 group-hover:scale-110 transition-transform";
+				if (textPause) {
+					textPause.innerText = "暫停偵測與計時";
+					textPause.className = "font-bold text-purple-600";
+				}
+			}
 		}
 	}
 
 	prevStates.mode = state.mode;
-
-	// ========================================================
-	// ⏱️ 計時器渲染與結算溫暖提示
-	// ========================================================
-	const tr = Math.max(0, state.target_work_time - state.work_time);
-	const timerEl = document.getElementById("timer");
-
-	if (timerEl) {
-		if (isSettled) {
-			// 🌟 結算狀態：顯示溫暖慰勞字樣
-			timerEl.innerText = "今日圓滿 ☕";
-			timerEl.classList.add("text-5xl", "text-emerald-500");
-			timerEl.classList.remove("text-6xl", "text-slate-700", "font-mono");
-		} else {
-			// 恢復正常倒數顯示
-			timerEl.innerText = `${Math.floor(tr / 60)
-				.toString()
-				.padStart(2, "0")}:${Math.floor(tr % 60)
-				.toString()
-				.padStart(2, "0")}`;
-			timerEl.classList.add("text-6xl", "text-slate-700", "font-mono");
-			timerEl.classList.remove("text-5xl", "text-emerald-500");
-		}
-	}
 
 	const workBar = document.getElementById("work-bar");
 	if (workBar) {
@@ -746,7 +806,6 @@ function setPomodoro(seconds, btn, isHeader = false) {
 	isSettled = false;
 	if (isPaused) togglePause();
 
-	// 1. 更新「設定選單」內的按鈕 (維持原狀)
 	const modalButtons = document.querySelectorAll("#timer-buttons button");
 	modalButtons.forEach((b) => {
 		b.className =
@@ -775,28 +834,22 @@ function setPomodoro(seconds, btn, isHeader = false) {
 		}
 	}
 
-	// 2. 🌟 更新上方導覽列的「液態玻璃滑塊」與文字顏色
 	const slider = document.getElementById("liquid-slider");
 	const header25 = document.getElementById("btn-header-25m");
 	const header10 = document.getElementById("btn-header-10s");
 
 	if (slider && header25 && header10) {
-		// 確保先清除顏色類別
 		header25.classList.remove("text-white", "text-slate-500");
 		header10.classList.remove("text-white", "text-slate-500");
 
 		if (seconds === 1500) {
-			// 滑塊歸位到左邊
 			slider.style.width = header25.offsetWidth + "px";
 			slider.style.transform = "translateX(0px)";
-			// 變更文字顏色
 			header25.classList.add("text-white");
 			header10.classList.add("text-slate-500");
 		} else if (seconds === 10) {
-			// 滑塊滑動到右邊 (動態抓取左邊按鈕的寬度作為位移距離)
 			slider.style.width = header10.offsetWidth + "px";
 			slider.style.transform = `translateX(${header25.offsetWidth}px)`;
-			// 變更文字顏色
 			header10.classList.add("text-white");
 			header25.classList.add("text-slate-500");
 		}
@@ -1073,7 +1126,8 @@ socket.on("daily_settlement_response", function (summary) {
 
 	loadSettlementImage(evaluation.image_url);
 	document.getElementById("settlement-title").innerText = evaluation.title;
-	document.getElementById("settlement-comment").innerText = evaluation.comment;
+	document.getElementById("settlement-comment").innerText =
+		evaluation.comment;
 	document.getElementById("settlement-advice").innerText = evaluation.advice;
 	document.getElementById("settlement-work-time").innerText =
 		summary.work_time.formatted;
@@ -1103,7 +1157,10 @@ function loadSettlementImage(imageUrl) {
 	image.src = imageUrl;
 
 	setTimeout(() => {
-		if (image.src === imageUrl && (!image.complete || image.naturalWidth === 0)) {
+		if (
+			image.src === imageUrl &&
+			(!image.complete || image.naturalWidth === 0)
+		) {
 			image.src = fallbackUrl;
 		}
 	}, 1500);

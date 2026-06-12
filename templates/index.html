@@ -4,12 +4,47 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>小企鵝陪你工作|工作專屬助理</title>
+
 		<link
 			rel="icon"
 			href="{{ url_for('static', filename='img/favicon.ico') }}"
 			type="image/x-icon"
 		/>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+
 		<script src="https://cdn.tailwindcss.com"></script>
+
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						fontFamily: {
+							sans: [
+								"Fredoka",
+								"PingFang TC",
+								"Microsoft JhengHei",
+								"Noto Sans TC",
+								"sans-serif",
+							],
+							mono: [
+								"Fredoka",
+								"PingFang TC",
+								"Microsoft JhengHei",
+								"Noto Sans TC",
+								"monospace",
+							],
+						},
+					},
+				},
+			};
+		</script>
+
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 		<link
 			rel="stylesheet"
@@ -48,7 +83,7 @@
 			</div>
 
 			<div
-				class="nav-scrollbar-hide flex flex-nowrap overflow-x-auto justify-center items-center gap-2.5 bg-white/70 p-2.5 rounded-[2rem] shadow-sm border border-purple-50 backdrop-blur-sm"
+				class="nav-scrollbar-hide flex flex-nowrap overflow-x-auto justify-center items-center gap-3 bg-white/70 p-2.5 rounded-[2rem] shadow-sm border border-purple-50 backdrop-blur-sm"
 			>
 				<div
 					class="relative flex items-center bg-purple-100/40 p-1 rounded-full shadow-inner border border-purple-50 shrink-0"
@@ -126,29 +161,25 @@
 				</button>
 
 				<div
-					class="flex items-center gap-1 bg-indigo-50/50 p-1 rounded-full shrink-0"
+					class="flex items-center gap-1.5 bg-indigo-50/40 p-1.5 rounded-full shrink-0 shadow-inner border border-indigo-50/50"
 				>
 					<button
 						onclick="sendReport('daily')"
 						id="btn-report-daily"
-						class="text-xs font-bold text-indigo-500 hover:bg-white px-3 py-1.5 rounded-full transition-all flex items-center gap-1 bubble-hover"
+						class="text-xs font-bold text-indigo-500 bg-white/60 hover:bg-white/90 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_2px_8px_rgba(99,102,241,0.2)] backdrop-blur-md border border-white/40 px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 bubble-hover"
 					>
 						<i class="fa-brands fa-discord"></i
-						><span
-							id="report-text-daily"
-							class="w-14 text-center inline-block"
+						><span id="report-text-daily" class="whitespace-nowrap"
 							>日報</span
 						>
 					</button>
 					<button
 						onclick="sendReport('weekly')"
 						id="btn-report-weekly"
-						class="text-xs font-bold text-fuchsia-500 hover:bg-white px-3 py-1.5 rounded-full transition-all flex items-center gap-1 bubble-hover"
+						class="text-xs font-bold text-fuchsia-500 bg-white/60 hover:bg-white/90 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_2px_8px_rgba(217,70,239,0.2)] backdrop-blur-md border border-white/40 px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 bubble-hover"
 					>
 						<i class="fa-brands fa-discord"></i
-						><span
-							id="report-text-weekly"
-							class="w-14 text-center inline-block"
+						><span id="report-text-weekly" class="whitespace-nowrap"
 							>週報</span
 						>
 					</button>
@@ -191,43 +222,43 @@
 							主人去哪了？
 						</h2>
 					</div>
+					<div
+						id="overlay-calib"
+						class="overlay-layer bg-purple-50/95 hidden"
+					>
 						<div
-							id="overlay-calib"
-							class="overlay-layer bg-purple-50/95 hidden"
+							class="relative flex flex-col items-center w-full max-w-md px-8 text-center"
 						>
-							<div
-								class="relative flex flex-col items-center w-full max-w-md px-8 text-center"
+							<i
+								id="calib-icon"
+								class="fa-solid fa-crosshairs text-6xl text-purple-400 mb-8 animate-spin"
+								style="animation-duration: 4s"
+							></i>
+							<h2
+								id="calib-title"
+								class="text-3xl font-black text-slate-800 mb-3"
 							>
-								<i
-									id="calib-icon"
-									class="fa-solid fa-crosshairs text-6xl text-purple-400 mb-8 animate-spin"
-									style="animation-duration: 4s"
-								></i>
-								<h2
-									id="calib-title"
-									class="text-3xl font-black text-slate-800 mb-3"
-								>
-									特徵校正中
-								</h2>
-								<p
-									id="calib-desc"
-									class="text-base font-bold text-slate-500 mb-5"
-								>
-									請正對鏡頭，保持雙肩水平並坐正
-								</p>
+								特徵校正中
+							</h2>
+							<p
+								id="calib-desc"
+								class="text-base font-bold text-slate-500 mb-5"
+							>
+								請正對鏡頭，保持雙肩水平並坐正
+							</p>
+							<div
+								class="w-full h-3 overflow-hidden rounded-full bg-white shadow-inner"
+								role="progressbar"
+								aria-label="特徵校正進度"
+							>
 								<div
-									class="w-full h-3 overflow-hidden rounded-full bg-white shadow-inner"
-									role="progressbar"
-									aria-label="特徵校正進度"
-								>
-									<div
-										id="calib-progress-bar"
-										class="h-full rounded-full bg-purple-400 transition-all duration-300"
-										style="width: 0%"
-									></div>
-								</div>
+									id="calib-progress-bar"
+									class="h-full rounded-full bg-purple-400 transition-all duration-300"
+									style="width: 0%"
+								></div>
 							</div>
 						</div>
+					</div>
 
 					<div
 						id="overlay-exercise"
@@ -253,10 +284,12 @@
 							<div class="flex items-baseline gap-2">
 								<span
 									id="ex-progress"
-									class="text-6xl font-black text-purple-400"
+									class="text-6xl font-bold text-purple-400"
 									>0</span
 								>
-								<span class="text-2xl text-slate-300">/ 5</span>
+								<span class="text-2xl font-bold text-slate-300"
+									>/ 5</span
+								>
 							</div>
 							<p id="ex-status" class="font-bold text-amber-500">
 								FOLLOW ME!
@@ -309,9 +342,10 @@
 							番茄鐘計時器
 						</p>
 
+						<!-- 刪除 font-mono，維持 font-black -->
 						<h2
 							id="timer"
-							class="text-6xl font-black text-slate-700 mb-2 font-mono tracking-tighter"
+							class="text-6xl font-black text-slate-700 mb-2 tracking-tighter"
 						>
 							25:00
 						</h2>
@@ -328,13 +362,15 @@
 						<button
 							id="btn-pause"
 							onclick="togglePause()"
-							class="btn-glass shadow-sm w-full py-2.5 mb-4 flex justify-center items-center gap-2 group"
+							class="w-full py-2.5 mb-4 flex justify-center items-center gap-2 group transition-all duration-300 bubble-hover cursor-pointer rounded-2xl bg-gradient-to-tr from-white/90 to-purple-50/90 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_2px_rgba(255,255,255,1),0_4px_12px_rgba(168,85,247,0.15)] hover:from-white hover:to-purple-100"
 						>
 							<i
 								id="icon-pause"
-								class="fa-solid fa-pause text-lg group-hover:scale-110 transition-transform"
+								class="fa-solid fa-pause text-lg text-purple-500 group-hover:scale-110 transition-transform"
 							></i>
-							<span id="text-pause" class="font-bold"
+							<span
+								id="text-pause"
+								class="font-bold text-purple-600"
 								>暫停偵測與計時</span
 							>
 						</button>
@@ -632,7 +668,7 @@
 						/>
 						<button
 							onclick="saveSettings(this)"
-							class="px-5 py-3 rounded-2xl font-bold text-white bg-purple-400 hover:bg-purple-500 transition-all shadow-md whitespace-nowrap bubble-hover"
+							class="px-5 py-3 rounded-2xl font-bold text-white bg-purple-400 hover:bg-purple-50 transition-all shadow-md whitespace-nowrap bubble-hover"
 						>
 							儲存
 						</button>
@@ -897,7 +933,11 @@
 			id="settlement-result-modal"
 			class="fixed inset-0 bg-slate-900/35 backdrop-blur-lg z-[70] hidden items-center justify-center opacity-0 p-4"
 		>
-			<div id="settlement-confetti" class="settlement-confetti" aria-hidden="true"></div>
+			<div
+				id="settlement-confetti"
+				class="settlement-confetti"
+				aria-hidden="true"
+			></div>
 			<div
 				id="settlement-result-card"
 				class="settlement-result-card w-full max-w-4xl max-h-[94vh] overflow-y-auto"
@@ -917,7 +957,10 @@
 							id="settlement-image"
 							src=""
 							alt="今日工作稱號"
-							onerror="this.onerror=null; this.src='/static/img/my_logo.png';"
+							onerror="
+								this.onerror = null;
+								this.src = '/static/img/my_logo.png';
+							"
 						/>
 						<div class="settlement-finish-badge">
 							<i class="fa-solid fa-flag-checkered"></i>
@@ -926,14 +969,25 @@
 					</div>
 
 					<div>
-						<p class="text-xs font-black tracking-[0.3em] text-purple-400 mb-2">
+						<p
+							class="text-xs font-black tracking-[0.3em] text-purple-400 mb-2"
+						>
 							DAILY WORK SETTLEMENT
 						</p>
-						<h2 id="settlement-title" class="text-3xl md:text-4xl font-black text-slate-800 leading-tight mb-3">
+						<h2
+							id="settlement-title"
+							class="text-3xl md:text-4xl font-black text-slate-800 leading-tight mb-3"
+						>
 							今日工作結算
 						</h2>
-						<p id="settlement-comment" class="text-slate-500 font-bold leading-relaxed mb-3"></p>
-						<p id="settlement-advice" class="text-sm text-indigo-600 font-black bg-indigo-50 rounded-2xl px-4 py-3"></p>
+						<p
+							id="settlement-comment"
+							class="text-slate-500 font-bold leading-relaxed mb-3"
+						></p>
+						<p
+							id="settlement-advice"
+							class="text-sm text-indigo-600 font-black bg-indigo-50 rounded-2xl px-4 py-3"
+						></p>
 					</div>
 				</div>
 
@@ -951,23 +1005,44 @@
 					<div class="settlement-stat">
 						<i class="fa-solid fa-fish text-sky-400"></i>
 						<span>摸魚時間</span>
-						<strong><b id="settlement-cyber-time">0</b> 分鐘</strong>
+						<strong
+							><b id="settlement-cyber-time">0</b> 分鐘</strong
+						>
 					</div>
 					<div class="settlement-stat">
-						<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+						<i
+							class="fa-solid fa-triangle-exclamation text-amber-400"
+						></i>
 						<span>健康警報</span>
 						<strong><b id="settlement-alerts">0</b> 次</strong>
 					</div>
 				</div>
 
 				<div class="starbucks-result mt-5">
-					<div class="starbucks-cup"><i class="fa-solid fa-mug-hot"></i></div>
+					<div class="starbucks-cup">
+						<i class="fa-solid fa-mug-hot"></i>
+					</div>
 					<div class="min-w-0">
-						<p class="text-xs font-black tracking-widest text-emerald-700/70">今日工作產值換算</p>
-						<p class="text-lg md:text-2xl font-black text-emerald-900">
-							可以購買 <span id="settlement-starbucks-cups" class="text-4xl">0</span> 杯星巴克
+						<p
+							class="text-xs font-black tracking-widest text-emerald-700/70"
+						>
+							今日工作產值換算
 						</p>
-						<p id="settlement-starbucks-detail" class="text-xs font-bold text-emerald-700/70 mt-1"></p>
+						<p
+							class="text-lg md:text-2xl font-black text-emerald-900"
+						>
+							可以購買
+							<span
+								id="settlement-starbucks-cups"
+								class="text-4xl"
+								>0</span
+							>
+							杯星巴克
+						</p>
+						<p
+							id="settlement-starbucks-detail"
+							class="text-xs font-bold text-emerald-700/70 mt-1"
+						></p>
 					</div>
 				</div>
 

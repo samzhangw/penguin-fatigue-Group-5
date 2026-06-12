@@ -54,12 +54,13 @@ else:
     print("⚠️ [警告] 找不到 Supabase 參數，雲端同步功能將被停用。請檢查 .env 檔案。")
     supabase_client = None
 
-# 🌟 初始化系統狀態
+# 🌟 初始化系統狀態，加入休息時間變數
 system_state = {
     "mode": "CALIBRATION", "work_time": 0.0, "target_work_time": 1500, "pomodoro_count": 0,       
+    "rest_time": 0.0, "target_rest_time": 300,
     "daily_total_time": 0.0, "user_absent": False, "eyes": "OPEN", "mouth": "NORMAL", "distance": "GOOD",
     "light": "GOOD", "posture": "GOOD", "shoulders": "BALANCED", "calibration_progress": 0,
-    "calibration_status": "COLLECTING", # 🌟 嚴格校正把關狀態
+    "calibration_status": "COLLECTING", 
     "exercise_task": "", "exercise_progress": "", "exercise_status": "",
     "alert_counts": {"eyes": 0, "shoulders": 0, "dist": 0, "mouth": 0, "light": 0},
     "is_paused": False,
@@ -157,9 +158,9 @@ def apply_ema(current_val, previous_ema, alpha=0.3):
     return alpha * current_val + (1 - alpha) * previous_ema
 
 # ==========================================
-# 🚀 深度 AI 數據洞察生成器 (NVIDIA) - 已加入生產力分析與嚴格教練模式
+# 🚀 深度 AI 數據洞察生成器 (NVIDIA) - 改版：溫暖健康助理 + 趨勢分析
 # ==========================================
-def get_ai_advice(time_str, alerts, pomo_done=0, pomo_fail=0, cyber_time=0, history=None):
+def get_ai_advice(time_str, alerts, pomo_done=0, pomo_fail=0, cyber_time=0, history=None, last_week_stats=None):
     if not nvidia_client:
         return "💡 *系統提示：設定 NVIDIA API Key 後，即可解鎖專屬 AI 深度分析功能！*"
     try:
@@ -170,50 +171,51 @@ def get_ai_advice(time_str, alerts, pomo_done=0, pomo_fail=0, cyber_time=0, hist
         issue_map = {"eyes": "眼部疲勞", "shoulders": "坐姿歪斜/高低肩", "dist": "距離螢幕過近", "mouth": "頻繁打哈欠", "light": "工作環境太暗"}
         top_1_zh = issue_map.get(top_issue_1, top_issue_1)
 
-        trend_context = "無歷史數據。"
+        trend_context = "無本週歷史數據。"
         if history and len(history) > 0:
-            trend_context = "【歷史趨勢】\n"
+            trend_context = "【本週近期數據】\n"
             for i, day in enumerate(history[-3:]): 
                 trend_context += f"前 {len(history)-i} 天: 專注 {int(day['time']//60)} 分，番茄鐘 {day['pomodoros']} 顆\n"
+
+        # 🌟 新增：加入上週數據進行趨勢比對
+        if last_week_stats:
+            trend_context += (f"\n【上週整體數據比對】\n"
+                              f"- 上週總專注時間: {int(last_week_stats['work_time']//60)} 分鐘\n"
+                              f"- 上週完成番茄鐘: {last_week_stats['pomodoros']} 顆\n"
+                              f"- 上週健康警報總數: {last_week_stats['alerts']} 次\n")
 
         cyber_mins = int(cyber_time // 60)
         
         prompt = f"""
-        你是一位毒舌、嚴格但非常專業的「生產力與人體工學教練」。
-        請根據使用者的今日數據，給出 50~100 字的「具體改善指令」。
+        你是一位溫暖、專業且善於數據分析的「健康與生產力分析助理」。
+        請根據使用者的數據，給出 50~120 字的「具體改善與健康建議」。
         
         ⚠️ 嚴格限制：
-        1. 絕對不准重複報數據！直接講重點。
-        2. 必須同時點評「生產力（專注與摸魚狀況）」與「健康（不良姿勢）」。
-        3. 如果摸魚時間過長或失敗番茄鐘大於 0，請嚴厲斥責其分心行為，並給出收心策略（如：把手機放另一個房間）。
-        4. 今日最嚴重的健康問題是【{top_1_zh}】，請給出具體的硬體或環境調整建議。
-        5. 語氣要像嚴格的教練，一針見血。
-        6. 請務必確保回答精簡，並給出「完整的結尾句」，絕不能話說一半。
+        1. 絕對不准重複報流水帳數據！請直接給出「洞察」與「建議」。
+        2. 必須綜合評估「生產力（專注狀況）」與「健康（不良姿勢與疲勞）」。
+        3. 【重要】請對比「上週整體數據」與本週狀況，具體指出使用者是進步還是退步（例如：專注時間是否拉長？警報次數是否減少？），並給予鼓勵或提醒。
+        4. 今日最嚴重的健康問題是【{top_1_zh}】，請給出具體的舒緩動作或環境調整建議。
+        5. 語氣要溫和專業，像是一位關心使用者身心健康的專屬顧問。
 
         {trend_context}
 
-        【今日綜合數據】
+        【本週/今日綜合數據】
         - 總專注時長：{time_str}
         - 成功番茄鐘：{pomo_done} 顆
-        - 失敗番茄鐘（摸魚離席中斷）：{pomo_fail} 顆
         - 總摸魚時間：{cyber_mins} 分鐘
         - 健康警報：眼部 {alerts['eyes']}次, 歪斜 {alerts['shoulders']}次, 過近 {alerts['dist']}次, 哈欠 {alerts['mouth']}次
         """
         
         completion = nvidia_client.chat.completions.create(
-            # 🚀 速度優化：如果 70b 模型反應太慢，強烈建議改為 8b 模型 (例如 "meta/llama-3.1-8b-instruct")
-            # 8b 模型的推理速度通常快上 3~5 倍，對於短評任務非常足夠。
             model="meta/llama-3.1-70b-instruct", 
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6, 
-            # 🚀 防切斷優化：將 max_tokens 從 250 提升至 512
-            max_tokens=512,
-            # 🚀 減少廢話：加入一點 presence_penalty 讓模型更傾向直接給重點
+            max_tokens=256,
             presence_penalty=0.2 
         )
         
         advice_text = completion.choices[0].message.content.strip()
-        return f"🧠 **PulseAI 毒舌教練分析 (Powered by NVIDIA)：**\n> {advice_text}"
+        return f"🧠 **PulseAI 專屬健康助理洞察 (Powered by NVIDIA)：**\n> {advice_text}"
         
     except Exception as e:
         print(f"AI Error: {e}")
@@ -264,55 +266,144 @@ def _discord_task(report_type, is_manual):
             }
             
         else: 
-            # 💡 週報區域：彙整資料、生成表格、並呼叫 NVIDIA API
-            total_time, total_pomos, total_alerts = state_snap["daily_total_time"], state_snap["pomodoro_count"], state_snap["alert_counts"].copy()
-            for day in hist_snap:
-                total_time += day["time"]
-                total_pomos += day["pomodoros"]
-                for k in total_alerts: total_alerts[k] += day["alerts"][k]
+            # 💡 週報區域：同日資料加總、生成精美可愛圖表、呼叫 NVIDIA API
+            import datetime
+            import urllib.parse
+            import json
+            
+            total_time = state_snap["daily_total_time"]
+            total_pomos = state_snap["pomodoro_count"]
+            total_alerts = state_snap["alert_counts"].copy()
+            
+            # ==========================================
+            # 1. 撈取 Supabase 歷史數據
+            # ==========================================
+            last_week_stats = None
+            trend_summary_text = "> *此為您使用的第一週，尚無上週數據可供比對喔！*\n\n"
+            chart_url = None
+            
+            aggregated_daily = {} 
+            
+            today = datetime.datetime.now()
+            today_str = today.strftime("%Y-%m-%d")
+            
+            if supabase_client:
+                try:
+                    start_of_last_week = (today - datetime.timedelta(days=14)).strftime("%Y-%m-%d")
+                    end_of_last_week = (today - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+                    start_of_this_week = (today - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
                     
+                    res = supabase_client.table("health_data").select("*").gte("date", start_of_last_week).lte("date", f"{today_str}T23:59:59").execute()
+                    
+                    if res.data:
+                        last_week_data = []
+                        for row in res.data:
+                            row_date = row.get("date", "")[:10]
+                            
+                            if start_of_last_week <= row_date <= end_of_last_week:
+                                last_week_data.append(row)
+                            elif start_of_this_week <= row_date <= today_str:
+                                if row_date not in aggregated_daily:
+                                    aggregated_daily[row_date] = {"work_time": 0, "pomodoros": 0, "alerts": 0}
+                                aggregated_daily[row_date]["work_time"] += row.get("work_time", 0)
+                                aggregated_daily[row_date]["pomodoros"] += row.get("pomodoros", 0)
+                                aggregated_daily[row_date]["alerts"] += (row.get("eyes", 0) + row.get("shoulders", 0) + row.get("dist", 0) + row.get("mouth", 0) + row.get("light", 0))
+                        
+                        if last_week_data:
+                            lw_time = sum(r.get("work_time", 0) for r in last_week_data)
+                            lw_pomos = sum(r.get("pomodoros", 0) for r in last_week_data)
+                            lw_alerts = sum(r.get("eyes", 0) + r.get("shoulders", 0) + r.get("dist", 0) + r.get("mouth", 0) + r.get("light", 0) for r in last_week_data)
+                            
+                            last_week_stats = {"work_time": lw_time, "pomodoros": lw_pomos, "alerts": lw_alerts}
+                            
+                            time_diff_h = (sum(d["work_time"] for d in aggregated_daily.values()) + state_snap["daily_total_time"] - lw_time) / 3600
+                            pomo_diff = sum(d["pomodoros"] for d in aggregated_daily.values()) + state_snap["pomodoro_count"] - lw_pomos
+                            
+                            trend_summary_text = (
+                                f"**【與上週相比】**\n"
+                                f"⏱️ 專注時間：{'📈' if time_diff_h >= 0 else '📉'} `{abs(time_diff_h):.1f}` 小時 ｜ "
+                                f"🎯 番茄鐘：{'📈' if pomo_diff >= 0 else '📉'} `{abs(pomo_diff)}` 顆\n\n"
+                            )
+                except Exception as e:
+                    print(f"撈取資料庫週報數據失敗: {e}")
+
+            if today_str not in aggregated_daily:
+                aggregated_daily[today_str] = {"work_time": 0, "pomodoros": 0, "alerts": 0}
+            
+            aggregated_daily[today_str]["work_time"] += state_snap["daily_total_time"]
+            aggregated_daily[today_str]["pomodoros"] += state_snap["pomodoro_count"]
+            aggregated_daily[today_str]["alerts"] += sum(state_snap["alert_counts"].values())
+
+            total_time = sum(d["work_time"] for d in aggregated_daily.values())
+            total_pomos = sum(d["pomodoros"] for d in aggregated_daily.values())
+            total_alerts_count = sum(d["alerts"] for d in aggregated_daily.values())
+
+            sorted_dates = sorted(aggregated_daily.keys())
+            
+            table_str = "```text\n日期   | 專注時間 | 番茄鐘 | 健康警報\n"
+            table_str += "--------------------------------------\n"
+            
+            chart_labels = []
+            chart_times = []
+            chart_pomos = []
+            chart_alerts = []
+            
+            for d in sorted_dates:
+                d_short = d[5:]
+                stats = aggregated_daily[d]
+                
+                t_h, t_r = divmod(int(stats["work_time"]), 3600)
+                table_str += f"{d_short} | {t_h:02d}h {t_r//60:02d}m  |  {stats['pomodoros']:02d} 顆 |  {int(stats['alerts']):02d} 次\n"
+                
+                chart_labels.append(d_short)
+                chart_times.append(round(stats["work_time"] / 60, 1))
+                chart_pomos.append(stats["pomodoros"])
+                chart_alerts.append(int(stats["alerts"]))
+                
+            table_str += "```\n"
+
+            chart_config = {
+                "type": "bar",
+                "data": {
+                    "labels": chart_labels,
+                    "datasets": [
+                        {"label": "專注(分鐘)", "backgroundColor": "rgba(192, 132, 252, 0.9)", "borderRadius": 8, "data": chart_times},
+                        {"label": "番茄鐘(顆)", "backgroundColor": "rgba(251, 113, 133, 0.9)", "borderRadius": 8, "data": chart_pomos},
+                        {"label": "警報(次)", "backgroundColor": "rgba(52, 211, 153, 0.9)", "borderRadius": 8, "data": chart_alerts}
+                    ]
+                },
+                "options": {
+                    "plugins": {
+                        "title": {"display": True, "text": "🐧 小企鵝本週努力紀錄", "font": {"size": 22, "family": "sans-serif"}},
+                        "legend": {"position": "bottom", "labels": {"font": {"size": 14}}}
+                    },
+                    "scales": {
+                        "x": {"grid": {"display": False}},
+                        "y": {"beginAtZero": True, "grid": {"color": "rgba(0,0,0,0.05)"}}
+                    }
+                }
+            }
+            chart_url = f"https://quickchart.io/chart?v=3&c={urllib.parse.quote(json.dumps(chart_config))}&w=650&h=350&bkg=white"
+
             hours, remainder = divmod(int(total_time), 3600)
             time_str = f"{hours} 小時 {remainder//60} 分鐘"
-            
             starbucks_count = int(total_time // 3600)
             
-            days_count = len(hist_snap) if len(hist_snap) > 0 else 1
-            avg_time = int(total_time / days_count)
-            avg_h, avg_r = divmod(avg_time, 3600)
-            avg_str = f"{avg_h} 小時 {avg_r//60} 分鐘"
-
-            # 🌟 動態生成每日生產力分析表格 (Markdown Code Block 格式)
-            if hist_snap:
-                table_str = "```text\n"
-                table_str += "天數   | 專注時間 | 番茄鐘 | 健康警報\n"
-                table_str += "----------------------------------\n"
-                for i, day in enumerate(hist_snap):
-                    d_h, d_r = divmod(int(day["time"]), 3600)
-                    d_m = d_r // 60
-                    time_f = f"{d_h:02d}h {d_m:02d}m"
-                    pomo_f = f"{day['pomodoros']:02d}"
-                    alerts_sum = sum(day["alerts"].values())
-                    alerts_f = f"{alerts_sum:02d}"
-                    table_str += f"Day {i+1} | {time_f}  |  {pomo_f} 顆 |  {alerts_f} 次\n"
-                table_str += "```\n"
-            else:
-                table_str = "```text\n無本週歷史數據\n```\n"
-            
-            # 只有週報才呼叫 NVIDIA API 分析
             ai_advice = get_ai_advice(
                 time_str, 
-                total_alerts, 
+                state_snap["alert_counts"],
                 total_pomos, 
                 0, 
                 0, 
-                history=hist_snap
+                history=[], 
+                last_week_stats=last_week_stats
             )
             
             if starbucks_count >= 20:
                 w_title = "🏆 本週 MVP / 產值印鈔機"
                 w_comment = "太狂了！這週的星巴克疊起來可以當塔了，但週末請務必去放假。"
                 w_img = "https://media.discordapp.net/attachments/1501988640878759957/1513215225523081406/image.png"
-            elif (total_alerts["eyes"] + total_alerts["shoulders"] + total_alerts["dist"]) > 50:
+            elif total_alerts_count > 50:
                 w_title = "🏥 復健科 VIP 候選人"
                 w_comment = "你的身體在哀嚎，這週末請遠離所有帶螢幕的物體！"
                 w_img = "https://media.discordapp.net/attachments/1501988640878759957/1513214908919976028/image.png"
@@ -326,25 +417,24 @@ def _discord_task(report_type, is_manual):
                 w_img = "https://media.discordapp.net/attachments/1501988640878759957/1513215835332808875/content.png"
             
             title = "📅 PulseAI 一週健康與產值總結報告" if not is_manual else "🧪 PulseAI 系統測試 (週報)"
-            # 將 table_str 加入到 Embed 的敘述當中
+            
             desc = (f"### {w_title}\n"
                     f"> **{w_comment}**\n\n"
+                    f"{trend_summary_text}"
                     f"**【本週專注與產值】**\n"
                     f"⏱️ 總專注時長：**{time_str}**\n"
-                    f"📊 平均每日專注：**{avg_str}**\n"
                     f"🎯 累計番茄鐘：**{total_pomos}** 顆\n"
                     f"☕ **本週創造產值：相當於賺到 {starbucks_count} 杯星巴克！**\n\n"
-                    f"**【本週健康警報累計】**\n"
-                    f"👀 疲勞：`{total_alerts['eyes']}` 次 ｜ 🥱 哈欠：`{total_alerts['mouth']}` 次\n"
-                    f"⚖️ 高低肩：`{total_alerts['shoulders']}` 次 ｜ 🖥️ 過近：`{total_alerts['dist']}` 次\n"
-                    f"💡 光線太暗：`{total_alerts['light']}` 次\n\n"
                     f"**【📊 每日生產力分析表】**\n"
                     f"{table_str}\n"
                     f"{ai_advice}")
             
             embed_payload = {"title": title, "description": desc, "color": 10181046, "thumbnail": {"url": w_img}}
+            
+            if chart_url:
+                embed_payload["image"] = {"url": chart_url}
 
-        payload = {"username": "PulseAI 助理", "embeds": [embed_payload]}
+        payload = {"username": "PulseAI 健康助理", "embeds": [embed_payload]}
         response = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
         
         if response.status_code == 204:
@@ -536,14 +626,13 @@ def ai_worker():
                             avg_ear = (calculate_ear(l_eye) + calculate_ear(r_eye)) / 2.0
                             mar = calculate_mar(m_pts)
                             
-                            # 🌟 核心防護：使用剛性特徵 (雙眼瞳孔間距 IOD) 取代臉部寬高
                             l_eye_outer = (face_landmarks.landmark[EYE_OUTER_LEFT].x * iw, face_landmarks.landmark[EYE_OUTER_LEFT].y * ih)
                             r_eye_outer = (face_landmarks.landmark[EYE_OUTER_RIGHT].x * iw, face_landmarks.landmark[EYE_OUTER_RIGHT].y * ih)
                             current_iod = calculate_distance(l_eye_outer, r_eye_outer)
                             iod_ratio = current_iod / iw if iw > 0 else 0
                             
                             mouth_width = calculate_distance(m_pts[0], m_pts[2])
-                            current_mw = mouth_width / current_iod if current_iod > 0 else 0 # 比例基於 IOD
+                            current_mw = mouth_width / current_iod if current_iod > 0 else 0 
                             
                             mouth_center = ((m_pts[0][0] + m_pts[2][0]) // 2, (m_pts[0][1] + m_pts[2][1]) // 2)
                             cover_threshold = mouth_width * 1.5
@@ -577,7 +666,6 @@ def ai_worker():
                             system_state["current_absent_time"] = 0.0
 
                             if current_mode == "CALIBRATION":
-                                # 🌟 校正優化：嚴格過濾不良姿勢與歪斜的基準幀
                                 is_valid_calib = (
                                     head_direction == "CENTER" 
                                     and not is_covering_mouth 
@@ -589,12 +677,12 @@ def ai_worker():
                                 if is_valid_calib:
                                     calib_data["ear"].append(avg_ear)
                                     calib_data["mar"].append(mar)
-                                    calib_data["dist"].append(iod_ratio) # 存入 IOD
+                                    calib_data["dist"].append(iod_ratio) 
                                     calib_data["shoulder"].append(raw_shoulder_slope)
                                     calib_data["mouth_w"].append(current_mw) 
                                     system_state["calibration_status"] = "COLLECTING"
                                 else:
-                                    system_state["calibration_status"] = "POSTURE_BAD" # 通知前端：退回防呆並警告
+                                    system_state["calibration_status"] = "POSTURE_BAD" 
                                 
                                 if is_valid_calib:
                                     calib_idx = len(calib_data["ear"])
@@ -607,10 +695,9 @@ def ai_worker():
                                         m_sh, s_sh = get_robust_stats(calib_data["shoulder"])
                                         m_mw, s_mw = get_robust_stats(calib_data["mouth_w"])
 
-                                        # 🌟 提高閉眼檢測與打哈欠的嚴格容忍度
                                         thresholds["ear"] = m_ear - max(4 * s_ear, 0.05) 
                                         thresholds["mar"] = m_mar + max(5 * s_mar, 0.35) 
-                                        thresholds["dist_max"] = m_dist + max(5 * s_dist, m_dist * 0.15) # 基於剛性 IOD 的距離閾值
+                                        thresholds["dist_max"] = m_dist + max(5 * s_dist, m_dist * 0.15) 
                                         thresholds["shoulder_base"] = m_sh
                                         thresholds["shoulder_dev"] = max(3 * s_sh, 0.05)
                                         thresholds["mouth_w_max"] = m_mw + max(4 * s_mw, 0.04) 
@@ -625,7 +712,7 @@ def ai_worker():
 
                                     ema_values["ear"] = apply_ema(avg_ear, ema_values["ear"])
                                     ema_values["mar"] = apply_ema(mar, ema_values["mar"])
-                                    ema_values["dist"] = apply_ema(iod_ratio, ema_values["dist"], alpha=0.15) # 使用 IOD
+                                    ema_values["dist"] = apply_ema(iod_ratio, ema_values["dist"], alpha=0.15) 
                                     ema_values["shoulder"] = apply_ema(raw_shoulder_slope, ema_values["shoulder"])
                                     ema_values["mouth_w"] = apply_ema(current_mw, ema_values["mouth_w"])
 
@@ -705,12 +792,46 @@ def ai_worker():
                                         system_state["exercise_status"] = "ARMS DOWN (現在請雙手舉起!)"
                                         if arms_up_state: arm_reps, arms_up_state = arm_reps + 1, False
                                 else: system_state["exercise_status"] = "請將上半身放入畫面"
-                                if arm_reps >= 5: system_state["mode"], system_state["work_time"] = "WORK", 0.0
+                                
+                                # 🌟 修改：當三大運動皆完成後，進入 REST 休息模式，並動態設定休息時長規則
+                                if arm_reps >= 5: 
+                                    system_state["mode"] = "REST"
+                                    system_state["rest_time"] = 0.0
+                                    
+                                    tw = system_state["target_work_time"]
+                                    pc = system_state["pomodoro_count"]
+                                    
+                                    if tw == 1500: # 25分鐘工作 -> 5分鐘休息 (每滿4個番茄鐘大休息15分鐘)
+                                        system_state["target_rest_time"] = 900 if pc % 4 == 0 else 300
+                                    elif tw == 3120: # 52分鐘工作 -> 8分鐘休息
+                                        system_state["target_rest_time"] = 480
+                                    elif tw >= 5400: # 90分鐘工作 -> 15分鐘休息
+                                        system_state["target_rest_time"] = 900
+                                    else: # 測試或其他自訂模式預設值 (一律改為 5 分鐘 = 300 秒)
+                                        system_state["target_rest_time"] = 300
+
+                            # 🌟 新增：REST 休息模式倒數邏輯
+                            elif current_mode == "REST":
+                                if not system_state.get("is_paused", False):
+                                    system_state["rest_time"] += dt
+                                
+                                # 休息時間到，自動切回工作模式
+                                if system_state["rest_time"] >= system_state["target_rest_time"]:
+                                    system_state["mode"], system_state["work_time"] = "WORK", 0.0
+                                    timer_eyes, timer_posture, timer_shoulder, timer_dist, timer_mouth = 0.0, 0.0, 0.0, 0.0, 0.0
+
+                        # 🌟 核心修正：當模式「不是 WORK」時，強制清除健康警報狀態
+                        if current_mode != "WORK":
+                            system_state["eyes"] = "OPEN"
+                            system_state["shoulders"] = "BALANCED"
+                            system_state["distance"] = "GOOD"
+                            system_state["mouth"] = "NORMAL"
+                            timer_eyes, timer_posture, timer_shoulder, timer_dist, timer_mouth = 0.0, 0.0, 0.0, 0.0, 0.0
 
                     current_time = time.time()
                     if current_time - last_emit_time >= 0.1:
                         with state_lock: 
-                            current_state_copy = copy.deepcopy(system_state) # 安全讀取並發送給前端
+                            current_state_copy = copy.deepcopy(system_state)
                         socketio.emit('state_update', current_state_copy)
                         last_emit_time = current_time
                     
@@ -750,6 +871,15 @@ def handle_set_time(data):
 def handle_pause(data): 
     with state_lock: 
         system_state["is_paused"] = data.get("paused", False)
+
+@socketio.on('request_skip_rest')
+def handle_skip_rest():
+    global force_recalibrate
+    with state_lock:
+        if system_state["mode"] == "REST":
+            system_state["mode"] = "WORK"
+            system_state["work_time"] = 0.0
+            system_state["rest_time"] = 0.0
 
 @socketio.on('request_daily_settlement')
 def handle_daily_settlement():
