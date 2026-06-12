@@ -951,62 +951,62 @@ socket.on("cloud_data_response", function (res) {
 			batteryCount > 0
 				? "🔋".repeat(Math.min(batteryCount, 12)) +
 					(batteryCount > 12 ? "+" : "")
-				: "🪫 <span class='text-xs text-slate-400'>(不到半小時)</span>";
+				: "🪫 <span class='dashboard-data-note text-slate-500'>(不到半小時)</span>";
 
 		let starbucksCount = Math.floor(workMins / 60);
 		let starbucksStr =
 			starbucksCount > 0
 				? "☕".repeat(Math.min(starbucksCount, 12)) +
 					(starbucksCount > 12 ? "+" : "")
-				: "💸 <span class='text-xs text-slate-400'>(還不夠買一杯)</span>";
+				: "💸 <span class='dashboard-data-note text-slate-500'>(還不夠買一杯)</span>";
 
 		let eyesStr =
 			row.eyes > 0
 				? "💧".repeat(Math.min(row.eyes, 12)) +
 					(row.eyes > 12 ? "+" : "")
-				: "✨ <span class='text-xs text-emerald-500'>(無疲勞)</span>";
+				: "✨ <span class='dashboard-data-note text-emerald-600'>(無疲勞)</span>";
 
 		let shouldersStr =
 			row.shoulders > 0
 				? "🧱".repeat(Math.min(row.shoulders, 12)) +
 					(row.shoulders > 12 ? "+" : "")
-				: "✨ <span class='text-xs text-emerald-500'>(姿勢端正)</span>";
+				: "✨ <span class='dashboard-data-note text-emerald-600'>(姿勢端正)</span>";
 
 		let lightStr =
 			row.light > 0
 				? "🕯️".repeat(Math.min(row.light, 12)) +
 					(row.light > 12 ? "+" : "")
-				: "✨ <span class='text-xs text-emerald-500'>(光線充足)</span>";
+				: "✨ <span class='dashboard-data-note text-emerald-600'>(光線充足)</span>";
 
 		htmlContent += `
-			<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:border-purple-200 hover:shadow-md transition-all shrink-0">
-				<div class="flex justify-between items-end mb-3 border-b border-slate-100 pb-2">
-					<span class="font-bold text-purple-700 text-lg flex items-center gap-2">
+			<div class="dashboard-data-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:border-purple-200 hover:shadow-md transition-all shrink-0">
+				<div class="dashboard-data-header flex justify-between items-end mb-4 border-b border-slate-100 pb-3">
+					<span class="dashboard-data-date font-black text-purple-700 flex items-center gap-2">
 						📅 ${dateStr}
 					</span>
-					<span class="text-xs text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded-md">總計 ${workMins} 分鐘</span>
+					<span class="dashboard-data-total text-slate-600 font-bold bg-slate-100 px-3 py-1.5 rounded-lg">總計 ${workMins} 分鐘</span>
 				</div>
 				
-				<div class="flex flex-col space-y-3">
-					<div class="flex items-center">
-						<span class="w-24 text-xs font-bold text-slate-500 shrink-0">⚡ 專注能量</span>
-						<span class="text-lg tracking-[0.2em] break-all">${batteryStr}</span>
+				<div class="flex flex-col space-y-4">
+					<div class="dashboard-data-row flex items-center">
+						<span class="dashboard-data-label font-bold text-slate-600 shrink-0">⚡ 專注能量</span>
+						<span class="dashboard-data-value tracking-[0.16em] break-all">${batteryStr}</span>
 					</div>
-					<div class="flex items-center">
-						<span class="w-24 text-xs font-bold text-slate-500 shrink-0">☕ 星巴克產值</span>
-						<span class="text-lg tracking-[0.2em] break-all">${starbucksStr}</span>
+					<div class="dashboard-data-row flex items-center">
+						<span class="dashboard-data-label font-bold text-slate-600 shrink-0">☕ 星巴克產值</span>
+						<span class="dashboard-data-value tracking-[0.16em] break-all">${starbucksStr}</span>
 					</div>
-					<div class="flex items-center">
-						<span class="w-24 text-xs font-bold text-slate-500 shrink-0">👀 疲勞眼藥水</span>
-						<span class="text-lg tracking-[0.2em] break-all">${eyesStr}</span>
+					<div class="dashboard-data-row flex items-center">
+						<span class="dashboard-data-label font-bold text-slate-600 shrink-0">👀 疲勞眼藥水</span>
+						<span class="dashboard-data-value tracking-[0.16em] break-all">${eyesStr}</span>
 					</div>
-					<div class="flex items-center">
-						<span class="w-24 text-xs font-bold text-slate-500 shrink-0">⚖️ 歪斜積木</span>
-						<span class="text-lg tracking-[0.2em] break-all">${shouldersStr}</span>
+					<div class="dashboard-data-row flex items-center">
+						<span class="dashboard-data-label font-bold text-slate-600 shrink-0">⚖️ 歪斜積木</span>
+						<span class="dashboard-data-value tracking-[0.16em] break-all">${shouldersStr}</span>
 					</div>
-					<div class="flex items-center">
-						<span class="w-24 text-xs font-bold text-slate-500 shrink-0">💡 摸黑點蠟燭</span>
-						<span class="text-lg tracking-[0.2em] break-all">${lightStr}</span>
+					<div class="dashboard-data-row flex items-center">
+						<span class="dashboard-data-label font-bold text-slate-600 shrink-0">💡 摸黑點蠟燭</span>
+						<span class="dashboard-data-value tracking-[0.16em] break-all">${lightStr}</span>
 					</div>
 				</div>
 			</div>

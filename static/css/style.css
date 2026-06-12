@@ -243,6 +243,52 @@ body {
 	animation: pop-bounce 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
+/* 健康趨勢雲端儀表板 */
+.dashboard-data-date {
+	font-size: 1.35rem;
+	line-height: 1.5;
+}
+
+.dashboard-data-total,
+.dashboard-data-note {
+	font-size: 0.95rem;
+	line-height: 1.5;
+}
+
+.dashboard-data-label {
+	width: 9.5rem;
+	font-size: 1rem;
+	line-height: 1.6;
+}
+
+.dashboard-data-value {
+	min-width: 0;
+	font-size: 1.35rem;
+	line-height: 1.6;
+}
+
+@media (max-width: 639px) {
+	.dashboard-data-header {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.65rem;
+	}
+
+	.dashboard-data-row {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.dashboard-data-label {
+		width: auto;
+	}
+
+	.dashboard-data-value {
+		padding-left: 0.25rem;
+	}
+}
+
 /* ==========================================
    今日工作結算
 ========================================== */
