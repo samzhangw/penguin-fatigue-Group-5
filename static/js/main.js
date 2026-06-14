@@ -270,22 +270,30 @@ function updateCameraUI() {
 	const overlayHidden = document.getElementById("overlay-hidden");
 
 	if (isCameraHidden) {
+		// 🌟【第一層：UX 視覺回饋】
+		// 改變按鈕樣式與文字，讓使用者明確知道現在是「隱藏」狀態
 		btn.classList.remove("border-purple-300", "bg-purple-50");
 		icon.className =
 			"fa-solid fa-video-slash text-slate-400 group-hover:text-slate-600 transition-colors";
 		text.innerText = "畫面隱藏";
 		text.className = "text-slate-500";
-
+		// 🌟【第二層：前端渲染優化 (DOM 效能)】
+		// 透過 Tailwind 的 hidden (display: none) 將影像元素從渲染樹拔除，
+		// 減輕瀏覽器的繪圖負擔；同時顯示可愛的「畫面休息中」遮罩。
 		if (videoStream) videoStream.classList.add("hidden");
 		if (overlayHidden) overlayHidden.classList.remove("hidden");
-
+		// 🌟【後端資源保護(CPU/RAM 效能保護) 】
 		if (
-			videoStream &&
-			videoStream.src &&
+			videoStream && //確認影像元素存在
+			videoStream.src && //確認它有網址
 			videoStream.src.includes("/video_feed")
+			//並且確認這個網址真的是連向我們後端的 /video_feed 串流
 		) {
 			videoStream.setAttribute("data-src", videoStream.src);
+			// 利用 data-src 這個自訂屬性，將原本的串流網址當作『備份』暫存起來。
 			videoStream.src = "";
+			// 主動斷開本地端的前後端連線，讓 Flask 暫停傳送影像，
+			// 降低本機電腦的 CPU 負擔
 		}
 	} else {
 		btn.classList.add("border-purple-300", "bg-purple-50");
@@ -1026,21 +1034,27 @@ function sendReport(type) {
 		return;
 	}
 
-	document.getElementById("report-text-" + type).innerText = "發送中...";
-	document.getElementById("btn-report-" + type).classList.add("opacity-50");
+	const btn = document.getElementById("btn-report-" + type);
+	const text = document.getElementById("report-text-" + type);
+	if (!btn || !text || btn.disabled) return;
+
+	text.innerText = "發送中...";
+	btn.disabled = true;
+	btn.classList.add("opacity-50", "cursor-not-allowed");
 	socket.emit("request_discord_report", { type: type });
 }
 
 socket.on("report_status", function (data) {
 	const rtype = data.type || "daily",
-		btn = document.getElementById("btn-report-" + rtype);
-	document.getElementById("report-text-" + rtype).innerText = data.success
-		? "成功！"
-		: "失敗";
+		btn = document.getElementById("btn-report-" + rtype),
+		text = document.getElementById("report-text-" + rtype);
+	if (!btn || !text) return;
+
+	text.innerText = data.success ? "成功！" : data.message || "發送失敗";
 	setTimeout(() => {
-		document.getElementById("report-text-" + rtype).innerText =
-			rtype === "daily" ? "發日報" : "發週報";
-		btn.classList.remove("opacity-50");
+		text.innerText = rtype === "daily" ? "發日報" : "發週報";
+		btn.disabled = false;
+		btn.classList.remove("opacity-50", "cursor-not-allowed");
 	}, 3000);
 });
 

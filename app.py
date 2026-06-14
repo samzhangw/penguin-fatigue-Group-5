@@ -227,6 +227,12 @@ def get_ai_advice(time_str, alerts, pomo_done=0, pomo_fail=0, cyber_time=0, hist
 def _discord_task(report_type, is_manual):
     global DISCORD_WEBHOOK_URL, weekly_history
     if not DISCORD_WEBHOOK_URL.startswith("http"):
+        if is_manual:
+            socketio.emit('report_status', {
+                "success": False,
+                "type": report_type,
+                "message": "尚未設定有效的 Discord Webhook"
+            })
         return
 
     # 安全地複製狀態，避免請求中途佔用鎖
@@ -289,54 +295,69 @@ def _discord_task(report_type, is_manual):
             
             if supabase_client:
                 try:
-                    start_of_last_week = (today - datetime.timedelta(days=14)).strftime("%Y-%m-%d")
+                    start_of_last_week = (today - datetime.timedelta(days=13)).strftime("%Y-%m-%d")
                     end_of_last_week = (today - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
                     start_of_this_week = (today - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
                     
                     res = supabase_client.table("health_data").select("*").gte("date", start_of_last_week).lte("date", f"{today_str}T23:59:59").execute()
                     
                     if res.data:
-                        last_week_data = []
+                        daily_snapshots = {}
                         for row in res.data:
                             row_date = row.get("date", "")[:10]
-                            
-                            if start_of_last_week <= row_date <= end_of_last_week:
-                                last_week_data.append(row)
-                            elif start_of_this_week <= row_date <= today_str:
-                                if row_date not in aggregated_daily:
-                                    aggregated_daily[row_date] = {"work_time": 0, "pomodoros": 0, "alerts": 0}
-                                aggregated_daily[row_date]["work_time"] += row.get("work_time", 0)
-                                aggregated_daily[row_date]["pomodoros"] += row.get("pomodoros", 0)
-                                aggregated_daily[row_date]["alerts"] += (row.get("eyes", 0) + row.get("shoulders", 0) + row.get("dist", 0) + row.get("mouth", 0) + row.get("light", 0))
-                        
+                            if not row_date:
+                                continue
+
+                            snapshot = {
+                                "work_time": row.get("work_time", 0) or 0,
+                                "pomodoros": row.get("pomodoros", 0) or 0,
+                                "alerts": sum((row.get(key, 0) or 0) for key in (
+                                    "eyes", "shoulders", "dist", "mouth", "light"
+                                ))
+                            }
+                            current = daily_snapshots.get(row_date)
+                            if current is None or snapshot["work_time"] >= current["work_time"]:
+                                daily_snapshots[row_date] = snapshot
+
+                        last_week_data = {
+                            date: stats for date, stats in daily_snapshots.items()
+                            if start_of_last_week <= date <= end_of_last_week
+                        }
+                        aggregated_daily = {
+                            date: stats for date, stats in daily_snapshots.items()
+                            if start_of_this_week <= date <= today_str
+                        }
+
                         if last_week_data:
-                            lw_time = sum(r.get("work_time", 0) for r in last_week_data)
-                            lw_pomos = sum(r.get("pomodoros", 0) for r in last_week_data)
-                            lw_alerts = sum(r.get("eyes", 0) + r.get("shoulders", 0) + r.get("dist", 0) + r.get("mouth", 0) + r.get("light", 0) for r in last_week_data)
+                            lw_time = sum(r["work_time"] for r in last_week_data.values())
+                            lw_pomos = sum(r["pomodoros"] for r in last_week_data.values())
+                            lw_alerts = sum(r["alerts"] for r in last_week_data.values())
                             
                             last_week_stats = {"work_time": lw_time, "pomodoros": lw_pomos, "alerts": lw_alerts}
                             
-                            time_diff_h = (sum(d["work_time"] for d in aggregated_daily.values()) + state_snap["daily_total_time"] - lw_time) / 3600
-                            pomo_diff = sum(d["pomodoros"] for d in aggregated_daily.values()) + state_snap["pomodoro_count"] - lw_pomos
-                            
-                            trend_summary_text = (
-                                f"**【與上週相比】**\n"
-                                f"⏱️ 專注時間：{'📈' if time_diff_h >= 0 else '📉'} `{abs(time_diff_h):.1f}` 小時 ｜ "
-                                f"🎯 番茄鐘：{'📈' if pomo_diff >= 0 else '📉'} `{abs(pomo_diff)}` 顆\n\n"
-                            )
                 except Exception as e:
                     print(f"撈取資料庫週報數據失敗: {e}")
 
-            if today_str not in aggregated_daily:
-                aggregated_daily[today_str] = {"work_time": 0, "pomodoros": 0, "alerts": 0}
-            
-            aggregated_daily[today_str]["work_time"] += state_snap["daily_total_time"]
-            aggregated_daily[today_str]["pomodoros"] += state_snap["pomodoro_count"]
-            aggregated_daily[today_str]["alerts"] += sum(state_snap["alert_counts"].values())
+            # Supabase 可能已經同步過今天的資料。以目前記憶體狀態覆蓋今天，
+            # 避免手動發送或週五自動流程把同一份資料重複計算。
+            aggregated_daily[today_str] = {
+                "work_time": state_snap["daily_total_time"],
+                "pomodoros": state_snap["pomodoro_count"],
+                "alerts": sum(state_snap["alert_counts"].values())
+            }
 
             total_time = sum(d["work_time"] for d in aggregated_daily.values())
             total_pomos = sum(d["pomodoros"] for d in aggregated_daily.values())
             total_alerts_count = sum(d["alerts"] for d in aggregated_daily.values())
+
+            if last_week_stats:
+                time_diff_h = (total_time - last_week_stats["work_time"]) / 3600
+                pomo_diff = total_pomos - last_week_stats["pomodoros"]
+                trend_summary_text = (
+                    f"**【與上週相比】**\n"
+                    f"⏱️ 專注時間：{'📈' if time_diff_h >= 0 else '📉'} `{abs(time_diff_h):.1f}` 小時 ｜ "
+                    f"🎯 番茄鐘：{'📈' if pomo_diff >= 0 else '📉'} `{abs(pomo_diff)}` 顆\n\n"
+                )
 
             sorted_dates = sorted(aggregated_daily.keys())
             
@@ -438,12 +459,28 @@ def _discord_task(report_type, is_manual):
         response = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
         
         if response.status_code == 204:
-            if is_manual: socketio.emit('report_status', {"success": True, "type": report_type})
+            if is_manual:
+                socketio.emit('report_status', {
+                    "success": True,
+                    "type": report_type,
+                    "message": "報告已成功送出"
+                })
         else:
-            if is_manual: socketio.emit('report_status', {"success": False, "type": report_type})
+            if is_manual:
+                socketio.emit('report_status', {
+                    "success": False,
+                    "type": report_type,
+                    "message": f"Discord 回傳 HTTP {response.status_code}"
+                })
             
     except Exception as e:
-        if is_manual: socketio.emit('report_status', {"success": False, "type": report_type})
+        print(f"發送 {report_type} 報告失敗: {e}")
+        if is_manual:
+            socketio.emit('report_status', {
+                "success": False,
+                "type": report_type,
+                "message": str(e)
+            })
 
 def send_discord_report(report_type="daily", is_manual=False):
     threading.Thread(target=_discord_task, args=(report_type, is_manual), daemon=True).start()
@@ -891,6 +928,13 @@ def handle_daily_settlement():
 @socketio.on('request_discord_report')
 def handle_manual_report(data):
     rtype = data.get("type", "daily") if data else "daily"
+    if rtype not in {"daily", "weekly"}:
+        socketio.emit('report_status', {
+            "success": False,
+            "type": "daily",
+            "message": "不支援的報告類型"
+        })
+        return
     send_discord_report(report_type=rtype, is_manual=True)
     if rtype == "daily": sync_to_cloud()
 
