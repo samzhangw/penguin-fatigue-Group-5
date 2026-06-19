@@ -5,120 +5,231 @@
 ![Flask](https://img.shields.io/badge/Framework-Flask-lightgrey)
 ![AI](https://img.shields.io/badge/AI-MediaPipe%20%7C%20NVIDIA%20NIM-green)
 
-**PulseAI** 是一款結合邊緣運算（Edge AI）、物聯網推播與生成式 AI 的全端健康管理系統，專為長時間久坐的上班族、遠距工作者及學生設計。透過電腦視覺即時監測坐姿與疲勞狀態，搭配番茄鐘與 AI 健康教練，打造零穿戴設備的智慧健康防護系統。
+## 🚀 專案簡介
+
+PulseAI 是一套結合 Edge AI、Computer Vision 與 Generative AI 的智慧辦公健康助理，專為長時間久坐的上班族、遠距工作者及學生設計。
+
+系統透過 Webcam 即時分析使用者的坐姿、疲勞程度、離席狀況與工作專注度，並結合番茄鐘管理、健康運動引導、Discord 推播及 NVIDIA NIM 大語言模型分析，在不需任何穿戴裝置的情況下，提供完整的健康管理與工作效率提升方案。
+
+---
+
+# ✨ 核心特色
+
+✅ Zero Wearable Design（零穿戴設備）
+
+✅ Edge AI 即時健康監測
+
+✅ 智能番茄鐘與防摸魚機制
+
+✅ NVIDIA GenAI 健康教練
+
+✅ Discord 自動推播日報／週報
+
+✅ Supabase 雲端同步
+
+---
+
+# 🏆 創新亮點
+
+## 🔹 Zero Wearable Health Monitoring
+
+不需智慧手環、智慧手錶或額外感測器。
+
+僅透過 Webcam 即可完成：
+
+* 距離監測
+* 疲勞偵測
+* 高低肩分析
+* 專注度分析
+
+---
+
+## 🔹 Edge AI Real-Time Detection
+
+所有影像分析皆於本地端完成：
+
+* OpenCV
+* MediaPipe Face Mesh
+* MediaPipe Pose
+* MediaPipe Hands
+
+降低延遲並保護使用者隱私。
+
+---
+
+## 🔹 AI Health Coach
+
+透過 NVIDIA NIM 與 Llama 3.1：
+
+* 分析專注時數
+* 分析疲勞狀況
+* 分析摸魚時間
+* 提供個人化健康建議
+
+---
+
+## 🔹 Gamification Productivity
+
+將專注時間轉換為實際價值：
+
+例如：
+
+* 累積 1 小時專注
+* 換算為努力成果
+* 形成正向激勵循環
 
 ---
 
 # ✨ 核心功能
 
-## 🍅 智能番茄鐘與防摸魚機制
+## 🍅 智能番茄鐘
 
-* 支援 25 分鐘標準模式
+支援：
+
+* 25 分鐘標準模式
 * 52 分鐘護眼模式
 * 90 分鐘深度工作模式
-* 自訂工作時間
-
-### 離席偵測
-
-若專注期間離開鏡頭超過 120 秒：
-
-* 自動判定番茄鐘失敗
-* 記錄摸魚時間
-* 加入每日報告
-* AI 教練進行嚴厲評語
+* 自訂工作模式
 
 ---
 
-## 👁️ Edge AI 即時健康偵測
+## 🚫 防摸魚機制
 
-### 剛性特徵測距（IOD）
+### 離席偵測
 
-利用雙眼瞳孔間距（Inter-Pupillary Distance）估算與螢幕距離，相較臉部寬高比更不受表情影響。
+專注期間若：
 
-### 疲勞監測
+* 離開鏡頭超過 120 秒
 
-#### Eye Aspect Ratio (EAR)
+系統將：
+
+* 判定本次番茄鐘失敗
+* 記錄摸魚時間
+* 累計失敗次數
+* 納入 AI 報告分析
+
+---
+
+## 👁️ Edge AI 健康偵測
+
+### IOD 距離監測
+
+Inter-Ocular Distance
+
+利用雙眼瞳孔間距估算：
+
+* 與螢幕距離
+* 過近用眼風險
+
+---
+
+### EAR 疲勞偵測
+
+Eye Aspect Ratio
 
 偵測：
 
-* 長時間閉眼
+* 閉眼
 * 頻繁眨眼
 * 疲勞狀態
 
-#### Mouth Aspect Ratio (MAR)
+---
 
-結合嘴巴高度與寬度比例：
+### MAR 打哈欠偵測
+
+Mouth Aspect Ratio
+
+辨識：
 
 * 打哈欠
 * 摀嘴動作
-* 過濾講話誤判
+* 排除講話誤判
 
-#### 高低肩監測
+---
 
-利用 MediaPipe Pose：
+### 高低肩監測
 
-* 計算肩膀水平斜率
+利用 Pose Landmarks：
+
+* 計算肩膀斜率
 * 偵測姿勢歪斜
 
-#### 環境亮度監測
+---
 
-利用灰階平均值：
+### 環境亮度監測
 
-* 光線過暗提醒
+利用影像灰階平均值：
+
+* 過暗提醒
 * 保護視力
 
 ---
 
-## 🤸 AI 運動引導
+# 🤸 AI 運動引導
 
-完成番茄鐘後進入強制休息：
+每次完成番茄鐘後：
 
-### 1. 手部伸展
+強制進入休息模式。
+
+---
+
+## 手部伸展
 
 * 握拳
-* 張開
+* 張開手掌
 
-### 2. 頸部伸展
+---
+
+## 頸部伸展
 
 * 左轉
 * 右轉
 
-### 3. 肩臂伸展
+---
+
+## 肩頸伸展
 
 * 雙手高舉
-* 舒展肩頸
+* 肩膀放鬆
 
 ---
 
-## 🧠 NVIDIA GenAI
+# 🧠 NVIDIA GenAI 健康教練
 
 串接：
 
 * NVIDIA NIM
 * Llama 3.1 8B
 
-根據：
+依據：
 
-* 專注時數
+* 專注時間
 * 摸魚時間
+* 疲勞程度
 * 高低肩次數
-* 疲勞狀況
 
-生成客製化健康分析與當周評語。
+生成：
+
+* 每日健康分析
+* 每週健康報告
+* 個人化改善建議
 
 ---
 
-## ☁️ 雲端同步
+# ☁️ 雲端同步
 
-### Supabase
+## Supabase
 
 儲存：
 
-* 健康資料
+* 健康數據
+* 專注紀錄
 * 番茄鐘紀錄
-* 使用者統計
+* 歷史統計
 
-### Discord Webhook
+---
+
+## Discord Webhook
 
 每日自動推播：
 
@@ -142,12 +253,12 @@ WebCam
    ↓
 OpenCV + MediaPipe
    ↓
-健康特徵分析
-(EAR、MAR、IOD、Pose)
+Feature Extraction
+(IOD / EAR / MAR / Pose)
    ↓
 EMA + IQR Filter
    ↓
-system_state
+System State Manager
    ↓
 Flask-SocketIO
    ↓
@@ -155,43 +266,41 @@ Dashboard
    ↓
 Supabase
    ↓
-Discord
+Discord Report
    ↓
 NVIDIA NIM
 ```
 
----
-
 # 🛠 技術架構
 
-## 後端
+## Backend
 
 * Python 3
 * Flask
 * Flask-SocketIO
 * Threading
 
-## 前端
+## Frontend
 
 * HTML5
 * Tailwind CSS
 * JavaScript
 * Chart.js
 
-## AI 與影像處理
+## Computer Vision
 
 * OpenCV
 * MediaPipe Face Mesh
-* MediaPipe Hands
 * MediaPipe Pose
+* MediaPipe Hands
+
+## Data Processing
+
 * NumPy
-
-## 資料處理
-
 * EMA Filter
 * IQR Filter
 
-## 雲端服務
+## Cloud Service
 
 * Supabase PostgreSQL
 * Discord Webhook
@@ -206,46 +315,31 @@ PulseAI/
 │
 ├── app.py
 ├── README.md
-├── .env
 ├── requirements.txt
+├── .env
 │
 ├── templates/
 │     └── index.html
 │
 ├── static/
 │     ├── css/
-│     │     └── style.css
-│     │
 │     ├── js/
-│     │     └── main.js
-│     │
 │     ├── img/
-│     │     ├── logo.png
-│     │     ├── dashboard.png
-│     │     └── exercise.png
-│     │
 │     └── audio/
-│           ├── alert.wav
-│           └── finish.wav
 │
-├── models/
 ├── reports/
 ├── logs/
-└── data/
+├── data/
+└── models/
 ```
-
----
 
 # 🚀 Quick Start
 
 ## 安裝需求
 
-Python 3.8+
-
-需要：
-
+* Python 3.8+
 * Webcam
-* 喇叭（選配）
+* 網路連線
 
 ---
 
@@ -254,8 +348,6 @@ Python 3.8+
 ```bash
 pip install opencv-python mediapipe numpy requests flask flask-socketio python-dotenv supabase
 ```
-
----
 
 ## 建立 .env
 
@@ -268,21 +360,17 @@ SUPABASE_KEY=your_anon_key
 DISCORD_WEBHOOK=your_webhook_url
 ```
 
----
-
 ## 啟動系統
 
 ```bash
 python app.py
 ```
 
-預設網址：
+開啟：
 
 ```text
 http://127.0.0.1:5001
 ```
-
----
 
 # 🧪 核心演算法
 
@@ -291,13 +379,14 @@ http://127.0.0.1:5001
 ```text
 EAR =
 (||p2-p6|| + ||p3-p5||)
-/ 2||p1-p4||
+/
+2(||p1-p4||)
 ```
 
 用途：
 
-* 疲勞
-* 閉眼
+* 疲勞監測
+* 閉眼偵測
 
 ---
 
@@ -312,15 +401,15 @@ mouth_width
 
 用途：
 
-* 打哈欠
-* 摀嘴
+* 打哈欠偵測
+* 嘴部遮擋分析
 
 ---
 
 ## EMA Filter
 
 ```python
-ema = alpha * current + (1-alpha) * previous
+ema = alpha * current + (1 - alpha) * previous
 ```
 
 降低感測抖動。
@@ -329,30 +418,34 @@ ema = alpha * current + (1-alpha) * previous
 
 ## IQR Filter
 
-移除異常值：
-
 ```python
 Q1 = percentile(data,25)
 Q3 = percentile(data,75)
 
-IQR = Q3-Q1
+IQR = Q3 - Q1
 
-lower = Q1 - 1.5*IQR
-upper = Q3 + 1.5*IQR
+lower = Q1 - 1.5 * IQR
+upper = Q3 + 1.5 * IQR
 ```
+
+移除異常值。
 
 ---
 
-# 💡 Engineering Highlights
+# 🔒 系統穩定性設計
 
-## Thread Safe
+## Multi-Thread Architecture
 
-多執行緒：
+獨立執行：
 
 * Flask Server
 * AI Detection
-* Discord Report
 * Scheduler
+* Discord Report
+
+---
+
+## Thread Safe
 
 使用：
 
@@ -365,30 +458,17 @@ frame_lock
 
 ---
 
-## EMA + IQR
-
-提升穩定性：
-
-* 距離偵測
-* 肩膀斜率
-* EAR
-* MAR
-
-降低誤判。
-
----
-
-## 嚴格校正
+## Calibration Validation
 
 校正時要求：
 
-✅ 坐正
+✅ 坐姿端正
 
 ✅ 光線充足
 
-✅ 不遮擋嘴巴
-
 ✅ 面向鏡頭
+
+✅ 嘴部無遮擋
 
 否則拒絕建立基準值。
 
@@ -396,38 +476,119 @@ frame_lock
 
 # 📊 Dashboard
 
-顯示：
+提供：
 
 * 專注時數
 * 摸魚時間
-* 高低肩次數
 * 疲勞指數
-* 歷史趨勢
-* 成功番茄鐘數
+* 高低肩次數
+* 番茄鐘成功率
+* 歷史趨勢分析
 
 ---
 
 # 🔮 Future Work
 
-* YOLOv11 姿勢辨識
-* 多使用者模式
-* 手機 APP
-* Telegram Bot
-* Line Notify
-* Gemini / GPT 教練模式
-* RAG 健康知識庫
-* LangChain Agent
+## YOLO 姿勢辨識
+
+辨識：
+
+* 駝背
+* 翹腳
+* 身體前傾
+
+---
+
+## Multi-User System
+
+支援：
+
+* 多帳號
+* 團隊排行榜
+
+---
+
+## Mobile App
+
+開發：
+
+* Android
+* iOS
+
+版本
+
+---
+
+## RAG 健康知識庫
+
+整合：
+
+* 健康指南
+* 人體工學知識
+* 醫療公開資料
+
+---
+
+## AI Agent Coach
+
+建立長期健康管理代理人。
 
 ---
 
 # 👥 開發團隊
 
-| 組員編號 | 姓名 | 負責核心領域與詳細貢獻 |
-| :---: | :--- | :--- |
-| 14 | 曾仁宥 | **【專注產值量化與遊戲化機制】**<br><ul><li>**產值轉換演算法：** 設計「時間價值量化」邏輯，將使用者的專注總時長（每累積滿 1 小時，約等於 2.4 個標準番茄鐘）換算為「賺到 1 杯星巴克☕」等實體價值指標，並於每週報告中結算，大幅提升使用者的成就感與維持專注的動力。</li></ul> |
-| 15 | 吳承誼 | **【前端架構與 UI/UX 互動設計】**<br><ul><li>**現代化介面開發：** 採用 HTML5 與 Tailwind CSS 打造高質感的「膠囊/玻璃擬物化 (Glassmorphism)」響應式使用者介面。</li><li>**即時狀態綁定：** 實作 WebSocket 客戶端，無延遲接收後端 AI 辨識結果，並動態渲染健康警示卡片與視訊串流。</li><li>**互動元件實作：** 開發動態番茄鐘計時器、運動姿勢引導彈窗、Chart.js 雲端數據視覺化圖表及系統設定面板。</li><li>**沉浸式體驗：** 整合系統狀態音效 (警告音、提示音) 與流暢的 CSS 動畫過場效果。</li></ul> |
-| 22 | 章惟善 | **【後端架構、邊緣 AI 視覺與雲端整合】**<br><ul><li>**核心後端引擎：** 基於 Python Flask 與 Flask-SocketIO 建構非同步即時通訊伺服器，並導入嚴謹的多執行緒鎖 (Thread Lock) 確保系統穩定。</li><li>**邊緣 AI 視覺演算法：** 整合 OpenCV 與 MediaPipe 開發 IOD 剛性特徵測距、EAR (眼部)、MAR (嘴部) 及 Pose (肩頸) 疲勞偵測，並加入 EMA 濾波演算法消除雜訊。</li><li>**生成式 AI 整合：** 串接 NVIDIA NIM (Llama 3.1) API，根據使用者健康與摸魚數據，動態生成「專屬健康分析助理」專屬點評。</li><li>**雲端與物聯網推播：** 建置 Supabase 資料庫進行歷史數據同步，並開發 Discord Webhook 機器人自動結算與推播圖文日報/週報。</li></ul> |
-| 33 | 林冠廷 | **【摸魚判定演算法與視覺資產設計】**<br><ul><li>**防摸魚機制 (Cyberloafing Logic)：** 制定離席與專注力不足的嚴格判定標準。當系統偵測到使用者離開鏡頭畫面連續超過 120 秒，即判定為「摸魚狀態」，不僅會將該段時間計入摸魚總時長，更會自動中斷當前進度，計入「失敗番茄鐘」。</li><li>**視覺資產生成：** 運用 AI 製作趣味圖像素材（如：企鵝摸魚圖），並整合於系統報告與前端介面中，強化整體的遊戲化與互動體驗。</li></ul> |
+## Core Developers
+
+### 吳承誼
+
+Frontend Engineer
+
+負責：
+
+* Dashboard UI 開發
+* Tailwind CSS 介面設計
+* JavaScript 前端邏輯
+* WebSocket 即時資料顯示
+* Chart.js 資料視覺化
+* 使用者互動流程設計
+
+---
+
+### 章惟善
+
+Backend & AI Engineer
+
+負責：
+
+* 系統架構設計
+* Flask 後端開發
+* Flask-SocketIO 即時通訊
+* OpenCV 與 MediaPipe 整合
+* EAR / MAR / IOD / Pose 演算法
+* EMA / IQR 濾波設計
+* 防摸魚判定邏輯
+* NVIDIA NIM 整合
+* Supabase 雲端同步
+* Discord Webhook 推播
+* 多執行緒同步控制
+
+---
+
+## Project Contributors
+
+### 曾仁宥
+
+* 功能需求討論
+* 遊戲化機制發想
+* 系統測試與回饋
+
+### 林冠廷
+
+* 摸魚機制規則討論
+* 展示素材協助
+* 系統測試與成果展示
+
+---
 
 # 📄 License
 
