@@ -515,17 +515,13 @@ Backend & AI Engineer
 
 負責：
 
-* 系統架構設計
 * Flask 後端開發
-* Flask-SocketIO 即時通訊
-* OpenCV 與 MediaPipe 整合
 * EAR / MAR / IOD / Pose 演算法
 * EMA / IQR 濾波設計
 * 防摸魚判定邏輯
 * NVIDIA NIM 整合
 * Supabase 雲端同步
 * Discord Webhook 推播
-* 多執行緒同步控制
 
 ---
 
